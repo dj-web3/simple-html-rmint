@@ -167,6 +167,45 @@
     .clock-task-item { border:1.5px solid var(--g300); border-left-width:4px; border-radius:10px; padding:8px 10px; margin-bottom:8px; background:var(--paper); }
     .clock-task-item .ct-title { font-family:var(--serif); font-size:13px; font-weight:500; color:var(--slate); }
     .placeholder { border:1.5px dashed var(--g300); padding:40px; text-align:center; border-radius:14px; color:var(--g500); font-family:var(--mono); font-size:13px; }
+
+    /* ===== Discovery ===== */
+    .discovery-top { display:flex; justify-content:space-between; align-items:flex-end; margin-bottom:16px; }
+    .discovery-title { font-family:var(--serif); font-size:26px; font-weight:600; letter-spacing:-.01em; }
+    .discovery-sub { font-family:var(--mono); font-size:11px; text-transform:uppercase; letter-spacing:.16em; color:var(--g500); margin-top:2px; }
+    .lattice-panel h3 { margin-bottom:14px; }
+    .lattice-grid { display:flex; flex-wrap:wrap; gap:12px; }
+    .lattice { position:relative; flex:1 1 180px; min-height:120px; border-radius:16px; padding:18px; cursor:pointer; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:10px; text-align:center; border:1.5px solid transparent; transition:transform 150ms,box-shadow 150ms,border-color 150ms,background 250ms; }
+    .lattice:hover { transform:translateY(-2px); box-shadow:0 8px 24px rgba(20,20,19,.07); }
+    .lattice.main { flex-basis:100%; min-height:150px; border-color:rgba(217,119,87,.5); }
+    .lattice.c0 { background:rgba(217,119,87,.16); }
+    .lattice.c1 { background:rgba(120,140,93,.18); }
+    .lattice.c2 { background:rgba(224,178,110,.24); }
+    .lattice.c3 { background:rgba(91,127,166,.16); }
+    .lattice.c4 { background:rgba(168,106,158,.16); }
+    .lattice-name { font-family:var(--sans); font-weight:700; font-size:14px; letter-spacing:.03em; text-transform:uppercase; color:var(--slate); }
+    .lattice.main .lattice-name { font-family:var(--serif); font-size:20px; letter-spacing:0; text-transform:none; font-weight:600; }
+    .lattice-demand { display:inline-flex; align-items:center; gap:6px; background:var(--paper); border-radius:999px; padding:4px 12px; font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:.04em; color:var(--g700); box-shadow:0 1px 3px rgba(0,0,0,.05); }
+    .ld-dot { width:7px; height:7px; border-radius:50%; background:var(--clay); }
+    .lattice-tag { position:absolute; top:12px; left:14px; font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.1em; color:var(--clay); background:var(--paper); padding:2px 8px; border-radius:999px; }
+    .lattice-select { border:1.5px solid var(--g300); border-radius:8px; padding:8px 10px; font-family:var(--sans); font-size:13px; background:var(--paper); color:var(--slate); cursor:pointer; min-width:150px; }
+    .lattice-select:focus { outline:none; border-color:var(--clay); }
+    .metric-table { width:100%; border-collapse:collapse; }
+    .metric-table th { text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--g500); padding:14px 16px; border-bottom:1.5px solid var(--g200); font-weight:600; }
+    .metric-table td { padding:14px 16px; border-bottom:1px solid var(--g200); font-size:13px; vertical-align:middle; }
+    .metric-table tr:last-child td { border-bottom:none; }
+    .metric-table tbody tr { transition:background 150ms; }
+    .metric-table tbody tr:hover { background:var(--g100); }
+    .metric-name { font-weight:600; }
+    .metric-prep { font-family:var(--mono); font-size:12px; color:var(--g700); }
+    .metric-pill { background:var(--g100); border-radius:999px; padding:4px 12px; font-family:var(--mono); font-size:12px; display:inline-block; color:var(--slate); }
+    .demand-cell-val { font-weight:600; font-size:13px; }
+    .demand-bar { height:6px; background:var(--g200); border-radius:999px; overflow:hidden; width:100px; margin-top:5px; }
+    .demand-fill { height:100%; background:var(--clay); border-radius:999px; }
+    .risk-num { font-weight:600; margin-right:8px; }
+    .risk-pill { padding:3px 10px; border-radius:999px; font-family:var(--mono); font-size:10px; font-weight:700; letter-spacing:.04em; color:white; }
+    .risk-low { background:var(--olive); }
+    .risk-med { background:#E0A02E; }
+    .risk-high { background:#C0553E; }
   </style>
 </head>
 <body>
@@ -324,12 +363,97 @@
       </div>
     </div>
 
-    <div class="view" id="discovery-view"><div class="placeholder">Discovery Module Placeholder</div></div>
+    <div class="view" id="discovery-view">
+      <div class="discovery-top">
+        <div>
+          <h2 class="discovery-title">Discovery</h2>
+          <div class="discovery-sub">Menu Lattice Intelligence</div>
+        </div>
+      </div>
+      <div class="panel lattice-panel">
+        <h3>Signature Pairing Lattice</h3>
+        <div class="lattice-grid" id="lattice-grid"></div>
+        <div class="small" style="margin-top:12px; font-family:var(--mono); font-size:10px; letter-spacing:.04em;">Click any lattice to swap the dish — it re-ranks by demand and shifts colour.</div>
+      </div>
+      <div class="panel" style="margin-top:16px; padding:0; overflow:hidden;">
+        <table class="metric-table">
+          <thead><tr><th>Menu Items</th><th>Prep Window</th><th>Unit Margin</th><th>Demand</th><th>Risk Score</th></tr></thead>
+          <tbody id="metric-tbody"></tbody>
+        </table>
+      </div>
+    </div>
     <div class="view" id="pairing-view"><div class="placeholder">Pairing Module Placeholder</div></div>
   </div>
 </div>
 <script>
 const appState={selectedPlanStep:null,editingNodeId:null,sharedDish:{ingredients:[{name:'Chicken',quantity:'800g'},{name:'Yogurt',quantity:'200g'},{name:'Rice',quantity:'1kg'},{name:'Spices',quantity:'120g'}],methodology:[{id:'1',title:'Chicken Marination',chefs:['SOUS','STATION'],ingredients:['Chicken','Yogurt'],duration:'45m',startTime:'07:00',process:'Marinating',x:220,y:240},{id:'2',title:'Rice Preparation',chefs:['JUNIOR'],ingredients:['Rice','Spices'],duration:'30m',startTime:'08:00',process:'Boiling',x:470,y:240},{id:'3',title:'Final Assembly',chefs:['TRAINEE'],ingredients:['Chicken','Rice'],duration:'20m',startTime:'09:00',process:'Combining',x:720,y:240}],flowNodes:[{id:'_start',type:'start',label:'Start',x:60,y:264},{id:'_end',type:'end',label:'End',x:980,y:264}],connections:[{from:'_start',to:'1'},{from:'1',to:'2'},{from:'2',to:'3'},{from:'3',to:'_end'}]}};
+/* ===== Discovery ===== */
+const LATTICE_COLORS=5;
+const DISH_METRICS={
+  'Chicken Biryani':{demand:95,prep:'45m',margin:'$18.00',risk:38},
+  'Butter Chicken':{demand:94,prep:'20m',margin:'$22.00',risk:43},
+  'Margherita Pizza':{demand:90,prep:'90m',margin:'$12.00',risk:30},
+  'Naan':{demand:96,prep:'10m',margin:'$1.20',risk:20},
+  'Chicken Tikka':{demand:88,prep:'25m',margin:'$14.00',risk:52},
+  'Gulab Jamun':{demand:94,prep:'40m',margin:'$5.00',risk:6},
+  'Veg Kolhapuri':{demand:78,prep:'30m',margin:'$8.00',risk:72},
+  'Butter Naan':{demand:94,prep:'12m',margin:'$1.20',risk:30},
+  'Tandoori Roti':{demand:88,prep:'10m',margin:'$0.80',risk:24},
+  'Appam':{demand:92,prep:'45m',margin:'$2.50',risk:52},
+  'Tender Coconut':{demand:85,prep:'5m',margin:'$6.00',risk:86},
+  'Payasam':{demand:97,prep:'40m',margin:'$5.00',risk:6},
+  'Squid Fry':{demand:81,prep:'15m',margin:'$15.00',risk:72},
+  'Jeera Rice':{demand:83,prep:'20m',margin:'$4.00',risk:28},
+  'Raita':{demand:79,prep:'8m',margin:'$2.00',risk:15},
+  'Papad':{demand:70,prep:'3m',margin:'$0.50',risk:12},
+  'Masala Chai':{demand:90,prep:'7m',margin:'$1.50',risk:18}
+};
+function metricsFor(name){
+  if(DISH_METRICS[name])return {...DISH_METRICS[name]};
+  let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))>>>0;
+  return {demand:70+(h%29),prep:(5+(h%9)*5)+'m',margin:'$'+(2+(h%20))+'.00',risk:5+(h%90)};
+}
+appState.discovery={editingId:null,
+  pool:['Butter Naan','Tandoori Roti','Appam','Tender Coconut','Payasam','Squid Fry','Jeera Rice','Raita','Papad','Masala Chai','Chicken Tikka','Naan','Gulab Jamun','Veg Kolhapuri'],
+  items:[
+    {id:'d1',name:'Chicken Biryani',main:true,colorIndex:0,demand:95,prep:'45m',margin:'$18.00',risk:38},
+    {id:'d2',name:'Naan',colorIndex:2,demand:96,prep:'10m',margin:'$1.20',risk:20},
+    {id:'d3',name:'Chicken Tikka',colorIndex:3,demand:88,prep:'25m',margin:'$14.00',risk:52},
+    {id:'d4',name:'Gulab Jamun',colorIndex:1,demand:94,prep:'40m',margin:'$5.00',risk:6},
+    {id:'d5',name:'Veg Kolhapuri',colorIndex:4,demand:78,prep:'30m',margin:'$8.00',risk:72}
+  ]};
+function renderDiscovery(){renderLattices();renderMetricTable();}
+function sortedComplements(){return appState.discovery.items.filter(i=>!i.main).sort((a,b)=>b.demand-a.demand);}
+function latticeEditor(it){
+  const used=new Set(appState.discovery.items.map(i=>i.name));
+  const opts=[it.name,...appState.discovery.pool.filter(n=>!used.has(n))];
+  return `<select class="lattice-select" onclick="event.stopPropagation()" onchange="swapLattice('${it.id}',this.value)">${opts.map(o=>`<option ${o===it.name?'selected':''}>${o}</option>`).join('')}</select>`;
+}
+function latticeHtml(it){
+  const editing=appState.discovery.editingId===it.id;
+  const inner=editing?latticeEditor(it):`<div class="lattice-name">${it.name}</div><div class="lattice-demand"><span class="ld-dot"></span>${it.demand}% DEMAND</div>`;
+  return `<div class="lattice c${it.colorIndex} ${it.main?'main':''}" onclick="openLatticeEditor('${it.id}')">${it.main?'<span class="lattice-tag">MAIN</span>':''}${inner}</div>`;
+}
+function renderLattices(){
+  const main=appState.discovery.items.find(i=>i.main);
+  const order=[...(main?[main]:[]),...sortedComplements()];
+  document.getElementById('lattice-grid').innerHTML=order.map(latticeHtml).join('');
+}
+function openLatticeEditor(id){appState.discovery.editingId=appState.discovery.editingId===id?null:id;renderLattices();}
+function swapLattice(id,newName){
+  const it=appState.discovery.items.find(i=>i.id===id);if(!it)return;
+  const m=metricsFor(newName);
+  it.name=newName;it.demand=m.demand;it.prep=m.prep;it.margin=m.margin;it.risk=m.risk;
+  it.colorIndex=(it.colorIndex+1)%LATTICE_COLORS;
+  appState.discovery.editingId=null;
+  renderDiscovery();
+}
+function riskClass(r){return r<=33?'risk-low':r<=66?'risk-med':'risk-high';}
+function riskLabel(r){return r<=33?'LOW':r<=66?'MEDIUM':'HIGH';}
+function renderMetricTable(){
+  const rows=[...appState.discovery.items].sort((a,b)=>b.demand-a.demand).map(it=>`<tr><td class="metric-name">${it.name}</td><td><span class="metric-prep">◷ ${it.prep}</span></td><td><span class="metric-pill">${it.margin}</span></td><td><span class="demand-cell-val">${it.demand}%</span><div class="demand-bar"><div class="demand-fill" style="width:${it.demand}%"></div></div></td><td><span class="risk-num">${it.risk}</span><span class="risk-pill ${riskClass(it.risk)}">${riskLabel(it.risk)}</span></td></tr>`).join('');
+  document.getElementById('metric-tbody').innerHTML=rows;
+}
 function deriveTasks(){const tasks=[];appState.sharedDish.methodology.forEach(step=>{step.chefs.forEach(chef=>{tasks.push({title:step.title,chef,startTime:step.startTime,duration:parseInt(step.duration,10),process:step.process,ingredients:step.ingredients});});});return tasks;}
 function renderIngredients(){const modalContainer=document.getElementById('ingredients-modal-list');const html=appState.sharedDish.ingredients.map(item=>`<div class="ingredient-item"><strong>${item.name}</strong><div class="small">${item.quantity}</div></div>`).join('');if(modalContainer){modalContainer.innerHTML=html;}}
 let _flowDrag=null,_connDrag=null;
@@ -520,6 +644,8 @@ function applyRecipe(r){
   const conns=[{from:'_start',to:steps[0].id}];for(let i=0;i<steps.length-1;i++)conns.push({from:steps[i].id,to:steps[i+1].id});conns.push({from:steps[steps.length-1].id,to:'_end'});
   appState.sharedDish.connections=conns;
   const dt=document.getElementById('dish-title');if(dt)dt.textContent=r.dish;
+  const mainD=appState.discovery.items.find(i=>i.main);
+  if(mainD){const m=metricsFor(r.dish);mainD.name=r.dish;mainD.demand=m.demand;mainD.prep=m.prep;mainD.margin=m.margin;mainD.risk=m.risk;}
   sync();
 }
 /* ===== Chat wiring ===== */
@@ -554,7 +680,7 @@ function openIngredientsModal(){document.getElementById('ingredients-modal').sty
 function closeIngredientsModal(){document.getElementById('ingredients-modal').style.display='none';}
 function showTask(title,process,start,duration,chef){alert('STEP DETAILS\n\n'+'Step: '+title+'\n'+'Process: '+process+'\n'+'Chef: '+chef+'\n'+'Start: '+start+'\n'+'Duration: '+duration);}
 function selectPlanStep(index){appState.selectedPlanStep=index;renderClockCards();}
-function sync(){renderIngredients();renderCanvas();renderMethodology();renderGuide();renderTimeline();renderClockCards();renderClockView();}
+function sync(){renderIngredients();renderCanvas();renderMethodology();renderGuide();renderTimeline();renderClockCards();renderClockView();renderDiscovery();}
 document.querySelectorAll('.nav-btn[data-view]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('.nav-btn[data-view]').forEach(btn=>btn.classList.remove('active'));button.classList.add('active');document.querySelectorAll('.view').forEach(view=>view.classList.remove('active'));document.getElementById(button.dataset.view).classList.add('active');});});
 document.querySelectorAll('.nav-btn[data-main]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('.nav-btn').forEach(btn=>btn.classList.remove('active'));button.classList.add('active');document.querySelectorAll('.view').forEach(view=>view.classList.remove('active'));const section=button.dataset.main;if(section==='discovery'){document.getElementById('discovery-view').classList.add('active');}if(section==='pairing'){document.getElementById('pairing-view').classList.add('active');}});});
 document.getElementById('timeline-toggle-btn').addEventListener('click',()=>{document.getElementById('timeline-view-section').style.display='block';document.getElementById('clock-view-section').style.display='none';});
