@@ -217,6 +217,58 @@
     .risk-low { background:var(--olive); }
     .risk-med { background:#E0A02E; }
     .risk-high { background:#C0553E; }
+
+    /* ===== Pairing / Menu Relationship Map ===== */
+    .pairing-head { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px; gap:12px; flex-wrap:wrap; }
+    .pair-legend { display:flex; gap:14px; flex-wrap:wrap; align-items:center; }
+    .pair-legend-item { display:flex; align-items:center; gap:6px; font-family:var(--mono); font-size:10px; color:var(--g500); letter-spacing:.04em; text-transform:uppercase; }
+    .pair-legend-swatch { width:14px; height:14px; border:1.5px solid var(--g500); background:var(--paper); flex-shrink:0; }
+    .pls-existing { border-radius:50%; }
+    .pls-upgrade { transform:rotate(45deg); }
+    .pls-missing { border-radius:50%; border-style:dashed; }
+    .pls-replace { border-radius:3px; border-color:var(--clay); }
+    .pairing-body { display:flex; gap:16px; align-items:stretch; flex-wrap:wrap; }
+    .pair-graph-panel { flex:1 1 440px; padding:0; overflow:hidden; min-width:360px; }
+    .pair-stage { position:relative; height:480px; background-color:var(--ivory); background-image:radial-gradient(circle, var(--g200) 1px, transparent 1px); background-size:26px 26px; overflow:hidden; }
+    .pair-svg { position:absolute; inset:0; pointer-events:none; z-index:1; }
+    .pair-axis { position:absolute; font-family:var(--mono); font-size:9px; letter-spacing:.14em; color:var(--g300); text-transform:uppercase; pointer-events:none; z-index:1; }
+    .pair-node { position:absolute; transform:translate(-50%,-50%); background:var(--paper); border:1.5px solid var(--g500); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; transition:box-shadow 150ms; box-shadow:0 2px 8px rgba(20,20,19,.06); }
+    .pair-node:hover { box-shadow:0 6px 18px rgba(20,20,19,.16); }
+    .pair-node.sel { border-color:var(--clay); box-shadow:0 0 0 3px rgba(217,119,87,.25); }
+    .pair-node .pn-demand { font-family:var(--mono); font-size:11px; font-weight:700; color:var(--slate); }
+    .pair-node.t-existing { border-radius:50%; }
+    .pair-node.t-missing { border-radius:50%; border-style:dashed; }
+    .pair-node.t-upgrade { transform:translate(-50%,-50%) rotate(45deg); border-radius:4px; }
+    .pair-node.t-upgrade .pn-demand { transform:rotate(-45deg); }
+    .pair-node.t-replace { border-radius:5px; border-color:var(--clay); }
+    .pair-node-label { position:absolute; transform:translateX(-50%); font-family:var(--sans); font-size:10px; font-weight:600; color:var(--slate); text-align:center; white-space:nowrap; pointer-events:none; z-index:2; text-transform:uppercase; letter-spacing:.02em; }
+    .pair-center { position:absolute; left:50%; top:50%; transform:translate(-50%,-50%); width:150px; min-height:106px; background:var(--paper); border:2px solid var(--clay); border-radius:16px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; padding:12px; cursor:pointer; z-index:3; box-shadow:0 8px 26px rgba(217,119,87,.18); text-align:center; }
+    .pair-center.sel { box-shadow:0 0 0 3px rgba(217,119,87,.3),0 8px 26px rgba(217,119,87,.18); }
+    .pair-center .pc-name { font-family:var(--serif); font-size:15px; font-weight:600; line-height:1.2; }
+    .pair-center .pc-meta { font-family:var(--mono); font-size:9px; color:var(--g500); letter-spacing:.03em; }
+    .pair-tooltip { position:absolute; background:var(--slate); color:white; border-radius:8px; padding:8px 10px; font-size:11px; line-height:1.5; z-index:100; pointer-events:none; display:none; box-shadow:0 8px 24px rgba(0,0,0,.2); max-width:180px; }
+    .pair-tooltip strong { font-family:var(--serif); font-weight:600; }
+    .pair-tooltip .ptt-row { font-family:var(--mono); font-size:10px; color:var(--oat); }
+    .pair-panel { flex:1 1 360px; max-width:440px; background:var(--paper); border:1.5px solid var(--g300); border-radius:14px; padding:0; overflow:hidden; display:none; align-self:flex-start; }
+    .pair-panel.open { display:block; }
+    .pair-panel-head { display:flex; justify-content:space-between; align-items:flex-start; padding:16px 18px; border-bottom:1.5px solid var(--g200); gap:10px; }
+    .pair-panel-title { font-family:var(--serif); font-size:18px; font-weight:600; }
+    .pair-badge { font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border-radius:999px; margin-top:6px; display:inline-block; background:var(--oat); color:var(--g700); }
+    .pair-panel-close { background:none; border:none; cursor:pointer; font-size:16px; color:var(--g500); line-height:1; padding:2px 4px; }
+    .pair-panel-close:hover { color:var(--slate); }
+    .pair-panel-body { padding:16px 18px; }
+    .pair-field { margin-bottom:16px; }
+    .pair-field-label { font-family:var(--mono); font-size:10px; text-transform:uppercase; letter-spacing:.06em; color:var(--g500); margin-bottom:5px; }
+    .pair-field-val { font-size:13px; color:var(--slate); line-height:1.5; }
+    .pair-metrics { display:flex; gap:10px; }
+    .pair-metric { flex:1; background:var(--g100); border-radius:10px; padding:10px; text-align:center; }
+    .pair-metric-num { font-family:var(--serif); font-size:16px; font-weight:600; }
+    .pair-metric-lbl { font-family:var(--mono); font-size:9px; text-transform:uppercase; color:var(--g500); margin-top:2px; letter-spacing:.04em; }
+    .pair-notes { list-style:none; padding:0; margin:0; }
+    .pair-notes li { font-size:12px; color:var(--g700); line-height:1.5; margin-bottom:8px; padding-left:18px; position:relative; }
+    .pair-notes li::before { content:'✓'; position:absolute; left:0; color:var(--olive); font-weight:700; }
+    .pair-chips { display:flex; flex-wrap:wrap; gap:6px; }
+    .pair-chip { background:var(--g100); border:1px solid var(--g300); border-radius:999px; padding:3px 10px; font-size:11px; font-family:var(--mono); color:var(--g700); }
   </style>
 </head>
 <body>
@@ -401,7 +453,16 @@
         </table>
       </div>
     </div>
-    <div class="view" id="pairing-view"><div class="placeholder">Pairing Module Placeholder</div></div>
+    <div class="view" id="pairing-view">
+      <div class="pairing-head">
+        <h2 class="discovery-title">Menu Relationship Map</h2>
+        <div class="pair-legend" id="pair-legend"></div>
+      </div>
+      <div class="pairing-body">
+        <div class="panel pair-graph-panel"><div class="pair-stage" id="pair-stage"></div></div>
+        <div class="pair-panel" id="pair-panel"></div>
+      </div>
+    </div>
   </div>
 </div>
 <script>
@@ -530,6 +591,98 @@ function renderMetricTable(){
   const all=[appState.discovery.main.name,...currentSlide().items.map(i=>i.name)].map(n=>({name:n,...metricsFor(n)}));
   const rows=all.sort((a,b)=>b.demand-a.demand).map(it=>`<tr><td class="metric-name">${it.name}</td><td><span class="metric-prep">◷ ${it.prep}</span></td><td><span class="metric-pill">${it.margin}</span></td><td><span class="demand-cell-val">${it.demand}%</span><div class="demand-bar"><div class="demand-fill" style="width:${it.demand}%"></div></div></td><td><span class="ai-note">${aiNote(it.name)}</span></td></tr>`).join('');
   document.getElementById('metric-tbody').innerHTML=rows;
+}
+/* ===== Pairing / Menu Relationship Map ===== */
+const PAIR_STAGE_H=480;
+const DISH_INFO={
+  'Chicken Biryani':{category:'Main',desc:'Fragrant basmati rice layered with spiced marinated chicken and slow dum-cooked.',ingredients:['Chicken','Basmati Rice','Yogurt','Saffron','Fried Onions'],method:'Dum-steamed',chef:'SOUS',notes:['Anchor dish for most order baskets.','Peaks during weekend dinner service.','Pairs strongly with cooling sides like raita.']},
+  'Butter Chicken':{category:'Main',desc:'Char-grilled chicken in a silky tomato-butter gravy.',ingredients:['Chicken','Tomato','Butter','Cream','Garam Masala'],method:'Simmered',chef:'SOUS',notes:['High-demand crowd pleaser.','Pairs naturally with naan and rice.','Great combo anchor.']},
+  'Margherita Pizza':{category:'Main',desc:'Wood-fired pizza with tomato, fresh mozzarella and basil.',ingredients:['Dough','Tomato','Mozzarella','Basil'],method:'Wood-fired',chef:'SOUS',notes:['Signature crowd favourite.','Pairs with garlic bread and drinks.','Strong combo anchor.']},
+  'Naan':{category:'Bread',desc:'Soft leavened flatbread baked in a tandoor.',ingredients:['Flour','Yogurt','Yeast','Butter'],method:'Tandoor-baked',chef:'STATION',notes:['Frequently added to curry and biryani orders.','High margin with low prep effort.','Recommended in every combo bundle.']},
+  'Chicken Tikka':{category:'Starter',desc:'Char-grilled marinated chicken chunks with smoky edges.',ingredients:['Chicken','Yogurt','Garam Masala','Lemon'],method:'Tandoor-grilled',chef:'STATION',notes:['Strong on-cuisine upsell before mains.','Repeat-order favourite.','Bundles well with mint chutney.']},
+  'Gulab Jamun':{category:'Dessert',desc:'Warm milk-solid dumplings soaked in rose-cardamom syrup.',ingredients:['Khoya','Sugar','Cardamom','Rose Water'],method:'Fried & soaked',chef:'TRAINEE',notes:['Top dessert attach after rich mains.','Drives higher average order value.','Promote as a meal finisher.']},
+  'Raita':{category:'Side',desc:'Cooling yogurt with cucumber and toasted cumin.',ingredients:['Yogurt','Cucumber','Cumin','Mint'],method:'Mixed & chilled',chef:'JUNIOR',notes:['Natural cooling pair for spiced mains.','Very low prep cost.','Add-on to most biryani orders.']},
+  'Mango Lassi':{category:'Beverage',desc:'Thick sweet yogurt smoothie blended with ripe mango.',ingredients:['Yogurt','Mango','Sugar','Cardamom'],method:'Blended',chef:'JUNIOR',notes:['Premium beverage upgrade.','Strong summer/seasonal uplift.','High-margin impulse add.']},
+  'Paneer Tikka':{category:'Starter',desc:'Grilled spiced cottage cheese with peppers and onion.',ingredients:['Paneer','Yogurt','Bell Pepper','Spices'],method:'Tandoor-grilled',chef:'STATION',notes:['Vegetarian upgrade opportunity.','Broadens the pairing basket.','Bundles with mint chutney.']},
+  'Papad':{category:'Side',desc:'Crisp roasted lentil wafer.',ingredients:['Lentil Flour','Cumin','Salt'],method:'Roasted',chef:'TRAINEE',notes:['Under-attached; easy upsell.','Near-zero prep effort.','Add as a table starter.']},
+  'Masala Chai':{category:'Beverage',desc:'Spiced milk tea simmered with cardamom and ginger.',ingredients:['Tea','Milk','Cardamom','Ginger'],method:'Simmered',chef:'JUNIOR',notes:['Consider replacing low-demand beverages.','Comforting close to the meal.','Steady all-day performer.']}
+};
+function dishInfo(name){return DISH_INFO[name]||{category:'Dish',desc:name+' — a house preparation crafted to complement the main dish.',ingredients:["Chef's selection"],method:'House method',chef:'SOUS',notes:[aiNote(name),'Steady repeat-order performer.','Pairs cleanly with the main dish.']};}
+appState.pairing={selectedId:null,
+  nodes:[
+    {id:'p1',name:'Naan',type:'existing',fx:0.25,fy:-0.15},
+    {id:'p2',name:'Chicken Tikka',type:'existing',fx:-0.55,fy:-0.3},
+    {id:'p3',name:'Gulab Jamun',type:'existing',fx:0.15,fy:0.8},
+    {id:'p4',name:'Raita',type:'existing',fx:0.72,fy:0.05},
+    {id:'p5',name:'Mango Lassi',type:'upgrade',fx:0.8,fy:0.5},
+    {id:'p6',name:'Paneer Tikka',type:'upgrade',fx:-0.45,fy:0.18},
+    {id:'p7',name:'Papad',type:'missing',fx:-0.18,fy:-0.62},
+    {id:'p8',name:'Masala Chai',type:'replace',fx:0.5,fy:0.55}
+  ]};
+function pairMain(){return appState.discovery.main.name;}
+function typeLabel(t){return {existing:'Existing',upgrade:'Upgrade',missing:'Missing',replace:'Replace'}[t]||'Existing';}
+function nodeSize(name){const d=metricsFor(name).demand;return Math.round(Math.max(46,Math.min(92,46+(d-70)*1.4)));}
+function borderW(name){const m=parseFloat(metricsFor(name).margin.replace('$',''))||1;return Math.max(1.5,Math.min(6,1.5+m/5)).toFixed(1);}
+function nodeCompat(n){const dist=Math.hypot(n.fx,n.fy);return Math.max(0.05,1-dist/1.5);}
+function renderPairing(){renderPairPanel();renderPairGraph();}
+function renderPairLegend(){
+  const el=document.getElementById('pair-legend');if(!el)return;
+  el.innerHTML=`<div class="pair-legend-item"><span class="pair-legend-swatch pls-existing"></span>Existing</div><div class="pair-legend-item"><span class="pair-legend-swatch pls-upgrade"></span>Upgrade</div><div class="pair-legend-item"><span class="pair-legend-swatch pls-missing"></span>Missing</div><div class="pair-legend-item"><span class="pair-legend-swatch pls-replace"></span>Replace</div>`;
+}
+function renderPairGraph(){
+  const stage=document.getElementById('pair-stage');if(!stage)return;
+  const p=appState.pairing;
+  const axes=`<div class="pair-axis" style="top:6px;left:50%;transform:translateX(-50%)">Sweet</div><div class="pair-axis" style="bottom:6px;left:50%;transform:translateX(-50%)">Savory</div><div class="pair-axis" style="top:32%;left:10px">Spicy</div><div class="pair-axis" style="top:32%;right:10px">Fresh</div><div class="pair-axis" style="bottom:28%;left:10px">Umami</div><div class="pair-axis" style="bottom:28%;right:10px">Creamy</div>`;
+  const mainName=pairMain(),mMet=metricsFor(mainName);
+  const center=`<div class="pair-center${p.selectedId==='center'?' sel':''}" data-pair-id="center" onclick="selectPairNode('center')" onmouseenter="showPairTip(event,'center')" onmouseleave="hidePairTip()"><div class="pc-name">${mainName}</div><div class="pc-meta">${mMet.prep} · ${mMet.margin} · D:${mMet.demand}</div></div>`;
+  const nodes=p.nodes.map(n=>{
+    const size=nodeSize(n.name),bw=borderW(n.name),met=metricsFor(n.name);
+    const x=50+n.fx*40,y=(50-n.fy*38)/100*PAIR_STAGE_H;
+    const sel=p.selectedId===n.id?' sel':'';
+    return `<div class="pair-node t-${n.type}${sel}" data-pair-id="${n.id}" style="left:${x}%;top:${y}px;width:${size}px;height:${size}px;border-width:${bw}px" onclick="selectPairNode('${n.id}')" onmouseenter="showPairTip(event,'${n.id}')" onmouseleave="hidePairTip()"><span class="pn-demand">${met.demand}</span></div><div class="pair-node-label" style="left:${x}%;top:${y+size/2+4}px">${n.name}</div>`;
+  }).join('');
+  stage.innerHTML=`<svg class="pair-svg" id="pair-svg"></svg>${axes}${center}${nodes}<div class="pair-tooltip" id="pair-tooltip"></div>`;
+  drawPairLines();renderPairLegend();
+}
+function drawPairLines(){
+  const stage=document.getElementById('pair-stage'),svg=document.getElementById('pair-svg');if(!svg||!stage)return;
+  const c=stage.querySelector('[data-pair-id="center"]');if(!c)return;
+  const cx=c.offsetLeft,cy=c.offsetTop,w=stage.clientWidth,h=stage.clientHeight;
+  svg.setAttribute('width',w);svg.setAttribute('height',h);svg.setAttribute('viewBox',`0 0 ${w} ${h}`);
+  let lines='';
+  appState.pairing.nodes.forEach(n=>{
+    const el=stage.querySelector(`.pair-node[data-pair-id="${n.id}"]`);if(!el)return;
+    const nx=el.offsetLeft,ny=el.offsetTop,compat=nodeCompat(n),lw=(1+compat*4).toFixed(1);
+    const col=compat>0.6?'#D97757':'#CFCBBF';
+    const dash=n.type==='missing'?'stroke-dasharray="3,5"':'';
+    lines+=`<line x1="${cx}" y1="${cy}" x2="${nx}" y2="${ny}" stroke="${col}" stroke-width="${lw}" ${dash} />`;
+  });
+  svg.innerHTML=lines;
+}
+function showPairTip(e,id){
+  const tip=document.getElementById('pair-tooltip');if(!tip)return;
+  const name=id==='center'?pairMain():(appState.pairing.nodes.find(x=>x.id===id)||{}).name;
+  if(!name)return;
+  const met=metricsFor(name),info=dishInfo(name);
+  tip.innerHTML=`<strong>${name}</strong><div class="ptt-row">Prep: ${met.prep}</div><div class="ptt-row">Margin: ${met.margin}</div><div class="ptt-row">Demand: ${met.demand}</div><div class="ptt-row">${info.category}</div>`;
+  const stage=document.getElementById('pair-stage'),r=stage.getBoundingClientRect();
+  tip.style.display='block';
+  const x=Math.min(e.clientX-r.left+12,stage.clientWidth-186),y=e.clientY-r.top+12;
+  tip.style.left=Math.max(4,x)+'px';tip.style.top=y+'px';
+}
+function hidePairTip(){const t=document.getElementById('pair-tooltip');if(t)t.style.display='none';}
+function selectPairNode(id){appState.pairing.selectedId=id;renderPairing();}
+function closePairPanel(){appState.pairing.selectedId=null;renderPairing();}
+function renderPairPanel(){
+  const panel=document.getElementById('pair-panel');if(!panel)return;
+  const id=appState.pairing.selectedId;
+  if(!id){panel.classList.remove('open');panel.innerHTML='';return;}
+  let name,badge;
+  if(id==='center'){name=pairMain();badge='Main';}
+  else{const n=appState.pairing.nodes.find(x=>x.id===id);if(!n){panel.classList.remove('open');panel.innerHTML='';return;}name=n.name;badge=typeLabel(n.type);}
+  const met=metricsFor(name),info=dishInfo(name);
+  panel.innerHTML=`<div class="pair-panel-head"><div><div class="pair-panel-title">${name}</div><span class="pair-badge">${badge} · ${info.category}</span></div><button class="pair-panel-close" onclick="closePairPanel()">✕</button></div><div class="pair-panel-body"><div class="pair-field"><div class="pair-field-label">Description</div><div class="pair-field-val">${info.desc}</div></div><div class="pair-field"><div class="pair-field-label">Ingredients</div><div class="pair-chips">${info.ingredients.map(i=>`<span class="pair-chip">${i}</span>`).join('')}</div></div><div class="pair-field"><div class="pair-field-label">Prep Method · Chef</div><div class="pair-field-val">${info.method} · <strong>${info.chef}</strong></div></div><div class="pair-metrics"><div class="pair-metric"><div class="pair-metric-num">${met.demand}</div><div class="pair-metric-lbl">Demand</div></div><div class="pair-metric"><div class="pair-metric-num">${met.prep}</div><div class="pair-metric-lbl">Prep Time</div></div></div><div class="pair-field" style="margin-top:16px"><div class="pair-field-label">AI Notes</div><ul class="pair-notes">${info.notes.map(n=>`<li>${n}</li>`).join('')}</ul></div></div>`;
+  panel.classList.add('open');
 }
 function deriveTasks(){const tasks=[];appState.sharedDish.methodology.forEach(step=>{step.chefs.forEach(chef=>{tasks.push({title:step.title,chef,startTime:step.startTime,duration:parseInt(step.duration,10),process:step.process,ingredients:step.ingredients});});});return tasks;}
 function renderIngredients(){const modalContainer=document.getElementById('ingredients-modal-list');const html=appState.sharedDish.ingredients.map(item=>`<div class="ingredient-item"><strong>${item.name}</strong><div class="small">${item.quantity}</div></div>`).join('');if(modalContainer){modalContainer.innerHTML=html;}}
@@ -756,9 +909,9 @@ function openIngredientsModal(){document.getElementById('ingredients-modal').sty
 function closeIngredientsModal(){document.getElementById('ingredients-modal').style.display='none';}
 function showTask(title,process,start,duration,chef){alert('STEP DETAILS\n\n'+'Step: '+title+'\n'+'Process: '+process+'\n'+'Chef: '+chef+'\n'+'Start: '+start+'\n'+'Duration: '+duration);}
 function selectPlanStep(index){appState.selectedPlanStep=index;renderClockCards();}
-function sync(){renderIngredients();renderCanvas();renderMethodology();renderGuide();renderTimeline();renderClockCards();renderClockView();renderDiscovery();}
+function sync(){renderIngredients();renderCanvas();renderMethodology();renderGuide();renderTimeline();renderClockCards();renderClockView();renderDiscovery();renderPairing();}
 document.querySelectorAll('.nav-btn[data-view]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('.nav-btn[data-view]').forEach(btn=>btn.classList.remove('active'));button.classList.add('active');document.querySelectorAll('.view').forEach(view=>view.classList.remove('active'));document.getElementById(button.dataset.view).classList.add('active');});});
-document.querySelectorAll('.nav-btn[data-main]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('.nav-btn').forEach(btn=>btn.classList.remove('active'));button.classList.add('active');document.querySelectorAll('.view').forEach(view=>view.classList.remove('active'));const section=button.dataset.main;if(section==='discovery'){document.getElementById('discovery-view').classList.add('active');}if(section==='pairing'){document.getElementById('pairing-view').classList.add('active');}});});
+document.querySelectorAll('.nav-btn[data-main]').forEach(button=>{button.addEventListener('click',()=>{document.querySelectorAll('.nav-btn').forEach(btn=>btn.classList.remove('active'));button.classList.add('active');document.querySelectorAll('.view').forEach(view=>view.classList.remove('active'));const section=button.dataset.main;if(section==='discovery'){document.getElementById('discovery-view').classList.add('active');}if(section==='pairing'){document.getElementById('pairing-view').classList.add('active');renderPairing();}});});
 document.getElementById('timeline-toggle-btn').addEventListener('click',()=>{document.getElementById('timeline-view-section').style.display='block';document.getElementById('clock-view-section').style.display='none';});
 document.getElementById('clock-toggle-btn').addEventListener('click',()=>{document.getElementById('timeline-view-section').style.display='none';document.getElementById('clock-view-section').style.display='block';});
 sync();
