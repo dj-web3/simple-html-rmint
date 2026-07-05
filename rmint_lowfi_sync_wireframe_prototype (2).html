@@ -196,6 +196,10 @@
     .lattice-tag { position:absolute; top:12px; left:14px; font-family:var(--mono); font-size:9px; font-weight:700; letter-spacing:.1em; color:var(--clay); background:var(--paper); padding:2px 8px; border-radius:999px; }
     .lattice-select { border:1.5px solid var(--g300); border-radius:8px; padding:8px 10px; font-family:var(--sans); font-size:13px; background:var(--paper); color:var(--slate); cursor:pointer; min-width:150px; }
     .lattice-select:focus { outline:none; border-color:var(--clay); }
+    .subset-row { display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; justify-content:center; }
+    .subset-chip { background:var(--paper); border:1.5px solid var(--clay); color:var(--clay); border-radius:999px; padding:3px 10px; font-family:var(--mono); font-size:10px; font-weight:600; cursor:pointer; letter-spacing:.03em; transition:background 150ms,color 150ms; }
+    .subset-chip:hover { background:var(--clay); color:white; }
+    .ai-note { font-size:12px; color:var(--g700); line-height:1.4; max-width:260px; }
     .metric-table { width:100%; border-collapse:collapse; }
     .metric-table th { text-align:left; font-family:var(--mono); font-size:10px; letter-spacing:.08em; text-transform:uppercase; color:var(--g500); padding:14px 16px; border-bottom:1.5px solid var(--g200); font-weight:600; }
     .metric-table td { padding:14px 16px; border-bottom:1px solid var(--g200); font-size:13px; vertical-align:middle; }
@@ -388,11 +392,11 @@
           </div>
         </div>
         <div class="lattice-stage" id="lattice-stage"></div>
-        <div class="small" style="margin-top:10px; font-family:var(--mono); font-size:10px; letter-spacing:.04em;">Click a card to swap the dish — it shuffles to a new spot &amp; shifts colour. Use ‹ › for other arrangements.</div>
+        <div class="small" style="margin-top:10px; font-family:var(--mono); font-size:10px; letter-spacing:.04em;">Click a card to swap. Closer = higher demand · farther = more different · 100% demand nests into the main. Use ‹ › for arrangements.</div>
       </div>
       <div class="panel" style="margin-top:16px; padding:0; overflow:hidden;">
         <table class="metric-table">
-          <thead><tr><th>Menu Items</th><th>Prep Window</th><th>Unit Margin</th><th>Demand</th><th>Risk Score</th></tr></thead>
+          <thead><tr><th>Menu Items</th><th>Prep Window</th><th>Unit Margin</th><th>Demand</th><th>AI Notes</th></tr></thead>
           <tbody id="metric-tbody"></tbody>
         </table>
       </div>
@@ -421,53 +425,90 @@ const DISH_METRICS={
   'Jeera Rice':{demand:83,prep:'20m',margin:'$4.00',risk:28},
   'Raita':{demand:79,prep:'8m',margin:'$2.00',risk:15},
   'Papad':{demand:70,prep:'3m',margin:'$0.50',risk:12},
-  'Masala Chai':{demand:90,prep:'7m',margin:'$1.50',risk:18}
+  'Masala Chai':{demand:90,prep:'7m',margin:'$1.50',risk:18},
+  'Steamed Rice':{demand:100,prep:'25m',margin:'$3.00',risk:10},
+  'Roti':{demand:100,prep:'8m',margin:'$0.70',risk:14}
 };
 function metricsFor(name){
   if(DISH_METRICS[name])return {...DISH_METRICS[name]};
   let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))>>>0;
   return {demand:70+(h%29),prep:(5+(h%9)*5)+'m',margin:'$'+(2+(h%20))+'.00',risk:5+(h%90)};
 }
+const MAIN_W=44,MAIN_H=190,ORBIT_W=26,ORBIT_H=120,STAGE_H=440;
+const DISH_DIFF={
+  'Naan':40,'Butter Naan':42,'Tandoori Roti':38,'Roti':36,'Chicken Tikka':25,'Gulab Jamun':85,'Veg Kolhapuri':65,
+  'Appam':55,'Payasam':88,'Tender Coconut':92,'Squid Fry':70,'Jeera Rice':30,'Raita':55,'Papad':48,'Steamed Rice':20,
+  'Masala Chai':90,'Dal Makhani':35,'Paneer Tikka':40,'Mango Lassi':88,'Fish Curry':45,'Idli':60,'Dosa':58
+};
+function dishDiff(name){if(DISH_DIFF[name]!=null)return DISH_DIFF[name];let h=0;for(let i=0;i<name.length;i++)h=(h*31+name.charCodeAt(i))>>>0;return 30+(h%60);}
+function aiNote(name){
+  const dem=metricsFor(name).demand,diff=dishDiff(name);
+  if(dem>=100)return 'Universal pair — served as part of the main plate.';
+  if(diff<=30&&dem>=88)return 'Strong on-cuisine upsell; bundle prominently.';
+  if(diff<=40)return 'Complements the main closely; natural add-on.';
+  if(diff>=80&&dem>=85)return 'Cross-cuisine hit — feature as a contrast pairing.';
+  if(diff>=80)return 'Distinct flavour profile; position as a novelty side.';
+  if(dem<80)return 'Niche demand; keep as an optional extra.';
+  return 'Balanced pairing; steady mid-menu performer.';
+}
 appState.discovery={editingId:null,slideIndex:0,
-  main:{name:'Chicken Biryani',colorIndex:0,x:26,y:70,w:46,h:200},
-  pool:['Butter Naan','Tandoori Roti','Appam','Tender Coconut','Payasam','Squid Fry','Jeera Rice','Raita','Papad','Masala Chai','Chicken Tikka','Naan','Gulab Jamun','Veg Kolhapuri','Dal Makhani','Paneer Tikka','Mango Lassi','Fish Curry','Idli','Dosa'],
+  main:{name:'Chicken Biryani',colorIndex:0},
+  pool:['Butter Naan','Tandoori Roti','Roti','Appam','Tender Coconut','Payasam','Squid Fry','Jeera Rice','Raita','Papad','Masala Chai','Chicken Tikka','Naan','Gulab Jamun','Veg Kolhapuri','Dal Makhani','Paneer Tikka','Mango Lassi','Fish Curry','Idli','Dosa','Steamed Rice'],
   slides:[
     {name:'Signature Makhani Lattice',items:[
-      {id:'s0a',name:'Naan',colorIndex:2,x:52,y:22,w:36,h:150},
-      {id:'s0b',name:'Chicken Tikka',colorIndex:3,x:56,y:198,w:34,h:172},
-      {id:'s0c',name:'Gulab Jamun',colorIndex:1,x:29,y:212,w:32,h:150},
-      {id:'s0d',name:'Veg Kolhapuri',colorIndex:4,x:5,y:172,w:28,h:178}]},
+      {id:'s0a',name:'Naan',colorIndex:2,angle:-35},
+      {id:'s0b',name:'Chicken Tikka',colorIndex:3,angle:35},
+      {id:'s0c',name:'Gulab Jamun',colorIndex:1,angle:115},
+      {id:'s0d',name:'Veg Kolhapuri',colorIndex:4,angle:205}]},
     {name:'South Indian Spread',items:[
-      {id:'s1a',name:'Appam',colorIndex:1,x:50,y:28,w:36,h:160},
-      {id:'s1b',name:'Payasam',colorIndex:4,x:58,y:206,w:32,h:158},
-      {id:'s1c',name:'Tender Coconut',colorIndex:3,x:30,y:214,w:30,h:150},
-      {id:'s1d',name:'Squid Fry',colorIndex:2,x:6,y:184,w:28,h:168}]},
+      {id:'s1a',name:'Appam',colorIndex:1,angle:-40},
+      {id:'s1b',name:'Payasam',colorIndex:4,angle:40},
+      {id:'s1c',name:'Tender Coconut',colorIndex:3,angle:120},
+      {id:'s1d',name:'Squid Fry',colorIndex:2,angle:210}]},
     {name:'Tandoori Feast',items:[
-      {id:'s2a',name:'Tandoori Roti',colorIndex:3,x:53,y:24,w:35,h:150},
-      {id:'s2b',name:'Butter Naan',colorIndex:2,x:56,y:202,w:33,h:168},
-      {id:'s2c',name:'Jeera Rice',colorIndex:1,x:29,y:214,w:32,h:150},
-      {id:'s2d',name:'Raita',colorIndex:4,x:6,y:180,w:27,h:172}]}
+      {id:'s2a',name:'Tandoori Roti',colorIndex:3,angle:-35},
+      {id:'s2b',name:'Butter Naan',colorIndex:2,angle:35},
+      {id:'s2c',name:'Jeera Rice',colorIndex:1,angle:120},
+      {id:'s2d',name:'Raita',colorIndex:4,angle:205}]}
   ]};
 function currentSlide(){return appState.discovery.slides[appState.discovery.slideIndex];}
 function renderDiscovery(){renderLattices();renderMetricTable();}
-function latticeInner(name,demand,isMain){return `${isMain?'<span class="lattice-tag">MAIN</span>':''}<div class="lattice-name">${name}</div><div class="lattice-demand"><span class="ld-dot"></span>${demand}% DEMAND</div>`;}
+function latticeInner(name,demand,isMain,subset){return `${isMain?'<span class="lattice-tag">MAIN</span>':''}<div class="lattice-name">${name}</div><div class="lattice-demand"><span class="ld-dot"></span>${demand}% DEMAND</div>${subset||''}`;}
 function latticeEditor(id,item){
   const used=new Set([appState.discovery.main.name,...currentSlide().items.map(i=>i.name)]);
   const opts=[item.name,...appState.discovery.pool.filter(n=>!used.has(n))];
   return `<select class="lattice-select" onclick="event.stopPropagation()" onchange="swapLattice('${id}',this.value)">${opts.map(o=>`<option ${o===item.name?'selected':''}>${o}</option>`).join('')}</select>`;
 }
-function latticeNodeHtml(id,item,isMain,z){
-  const editing=appState.discovery.editingId===id;
-  const met=metricsFor(item.name);
-  const inner=editing?latticeEditor(id,item):latticeInner(item.name,met.demand,isMain);
-  const click=isMain?'':`onclick="openLatticeEditor('${id}')"`;
-  return `<div class="lattice c${item.colorIndex}${isMain?' main':''}" data-lat-id="${id}" style="left:${item.x}%;top:${item.y}px;width:${item.w}%;height:${item.h}px;z-index:${z}" ${click}>${inner}</div>`;
+/* radial position: closer to main = higher demand, farther = more different */
+function orbitPos(item){
+  const demand=metricsFor(item.name).demand,diff=dishDiff(item.name);
+  const nr=Math.min(46,15+(diff/100)*24+((100-demand)/100)*16);
+  const rad=item.angle*Math.PI/180;
+  return {cx:50+nr*Math.cos(rad),cy:50+nr*Math.sin(rad)};
+}
+function subsetChipHtml(it){
+  if(appState.discovery.editingId===it.id)return latticeEditor(it.id,it);
+  return `<span class="subset-chip" onclick="openLatticeEditor('${it.id}')">${it.name} · 100%</span>`;
 }
 function renderLattices(){
-  const d=appState.discovery,slide=currentSlide(),cards=[];
-  cards.push(latticeNodeHtml('main',d.main,true,1));
-  slide.items.forEach((it,i)=>cards.push(latticeNodeHtml(it.id,it,false,2+i)));
-  document.getElementById('lattice-stage').innerHTML=cards.join('');
+  const d=appState.discovery,slide=currentSlide();
+  const nested=[],orbit=[];
+  slide.items.forEach(it=>(metricsFor(it.name).demand>=100?nested:orbit).push(it));
+  // main (centred)
+  const mMet=metricsFor(d.main.name);
+  const mLeft=50-MAIN_W/2,mTop=STAGE_H/2-MAIN_H/2;
+  const subset=nested.length?`<div class="subset-row">${nested.map(subsetChipHtml).join('')}</div>`:'';
+  let html=`<div class="lattice main c${d.main.colorIndex}" data-lat-id="main" style="left:${mLeft}%;top:${mTop}px;width:${MAIN_W}%;height:${MAIN_H}px;z-index:1">${latticeInner(d.main.name,mMet.demand,true,subset)}</div>`;
+  // orbiting complements
+  orbit.forEach((it,i)=>{
+    const p=orbitPos(it);
+    let left=Math.max(2,Math.min(100-ORBIT_W-2,p.cx-ORBIT_W/2));
+    let top=Math.max(10,Math.min(STAGE_H-ORBIT_H-10,(p.cy/100)*STAGE_H-ORBIT_H/2));
+    const editing=d.editingId===it.id;
+    const inner=editing?latticeEditor(it.id,it):latticeInner(it.name,metricsFor(it.name).demand,false);
+    html+=`<div class="lattice c${it.colorIndex}" data-lat-id="${it.id}" style="left:${left}%;top:${top}px;width:${ORBIT_W}%;height:${ORBIT_H}px;z-index:${2+i}" onclick="openLatticeEditor('${it.id}')">${inner}</div>`;
+  });
+  document.getElementById('lattice-stage').innerHTML=html;
   document.getElementById('slide-name').textContent=slide.name;
   renderDots();
 }
@@ -476,28 +517,18 @@ function renderDots(){
   document.getElementById('lattice-dots').innerHTML=d.slides.map((s,i)=>`<span class="lattice-dot ${i===d.slideIndex?'active':''}" onclick="goSlide(${i})"></span>`).join('');
 }
 function openLatticeEditor(id){appState.discovery.editingId=appState.discovery.editingId===id?null:id;renderLattices();}
-function randomizePos(it){it.x=Math.round(4+Math.random()*(100-it.w-8));it.y=Math.round(18+Math.random()*(440-it.h-36));}
 function swapLattice(id,newName){
   const item=currentSlide().items.find(i=>i.id===id);if(!item)return;
-  item.name=newName;item.colorIndex=(item.colorIndex+1)%LATTICE_COLORS;randomizePos(item);
+  item.name=newName;item.colorIndex=(item.colorIndex+1)%LATTICE_COLORS;
   appState.discovery.editingId=null;
-  const el=document.querySelector(`[data-lat-id="${id}"]`);
-  if(el){
-    const met=metricsFor(newName);
-    el.className=`lattice c${item.colorIndex}`;
-    el.style.left=item.x+'%';el.style.top=item.y+'px';el.style.zIndex=50;
-    el.innerHTML=latticeInner(newName,met.demand,false);
-  } else renderLattices();
-  renderMetricTable();
+  renderDiscovery();
 }
 function goSlide(i){appState.discovery.slideIndex=i;appState.discovery.editingId=null;renderDiscovery();}
 function nextSlide(){const d=appState.discovery;goSlide((d.slideIndex+1)%d.slides.length);}
 function prevSlide(){const d=appState.discovery;goSlide((d.slideIndex-1+d.slides.length)%d.slides.length);}
-function riskClass(r){return r<=33?'risk-low':r<=66?'risk-med':'risk-high';}
-function riskLabel(r){return r<=33?'LOW':r<=66?'MEDIUM':'HIGH';}
 function renderMetricTable(){
-  const all=[{name:appState.discovery.main.name},...currentSlide().items].map(x=>({name:x.name,...metricsFor(x.name)}));
-  const rows=all.sort((a,b)=>b.demand-a.demand).map(it=>`<tr><td class="metric-name">${it.name}</td><td><span class="metric-prep">◷ ${it.prep}</span></td><td><span class="metric-pill">${it.margin}</span></td><td><span class="demand-cell-val">${it.demand}%</span><div class="demand-bar"><div class="demand-fill" style="width:${it.demand}%"></div></div></td><td><span class="risk-num">${it.risk}</span><span class="risk-pill ${riskClass(it.risk)}">${riskLabel(it.risk)}</span></td></tr>`).join('');
+  const all=[appState.discovery.main.name,...currentSlide().items.map(i=>i.name)].map(n=>({name:n,...metricsFor(n)}));
+  const rows=all.sort((a,b)=>b.demand-a.demand).map(it=>`<tr><td class="metric-name">${it.name}</td><td><span class="metric-prep">◷ ${it.prep}</span></td><td><span class="metric-pill">${it.margin}</span></td><td><span class="demand-cell-val">${it.demand}%</span><div class="demand-bar"><div class="demand-fill" style="width:${it.demand}%"></div></div></td><td><span class="ai-note">${aiNote(it.name)}</span></td></tr>`).join('');
   document.getElementById('metric-tbody').innerHTML=rows;
 }
 function deriveTasks(){const tasks=[];appState.sharedDish.methodology.forEach(step=>{step.chefs.forEach(chef=>{tasks.push({title:step.title,chef,startTime:step.startTime,duration:parseInt(step.duration,10),process:step.process,ingredients:step.ingredients});});});return tasks;}
