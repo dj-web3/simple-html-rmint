@@ -236,8 +236,8 @@
     .pair-node:hover { box-shadow:0 6px 18px rgba(20,20,19,.16); }
     .pair-node.sel { border-color:var(--clay); box-shadow:0 0 0 3px rgba(217,119,87,.25); }
     .pair-node .pn-demand { font-family:var(--mono); font-size:11px; font-weight:700; color:var(--slate); }
-    .pair-node.t-existing { border-radius:50%; }
-    .pair-node.t-missing { border-radius:50%; border-style:dashed; }
+    .pair-node.t-existing { border-radius:50%; border-color:var(--clay); }
+    .pair-node.t-missing { border-radius:50%; border-style:dashed; border-color:var(--g500); }
     .pair-node.t-upgrade { transform:translate(-50%,-50%) rotate(45deg); border-radius:4px; }
     .pair-node.t-upgrade .pn-demand { transform:rotate(-45deg); }
     .pair-node.t-replace { border-radius:5px; border-color:var(--clay); }
@@ -275,6 +275,10 @@
     .psc-name { font-family:var(--serif); font-size:13px; font-weight:600; color:var(--slate); line-height:1.2; }
     .psc-cat { font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.04em; color:var(--g500); margin:3px 0; }
     .psc-meta { font-family:var(--mono); font-size:10px; color:var(--g700); }
+    .pair-menu-cta { display:block; width:100%; text-align:center; margin-bottom:16px; }
+    .pair-menu-cta.remove { border-color:#C0553E; color:#C0553E; }
+    .pair-menu-cta.remove:hover { background:#C0553E; border-color:#C0553E; color:white; }
+    .pair-legend-swatch.pls-existing { border-color:var(--clay); }
   </style>
 </head>
 <body>
@@ -642,7 +646,9 @@ appState.pairing={selectedId:null,
     {id:'p8',name:'Masala Chai',type:'existing',fx:0.5,fy:0.55}
   ]};
 function pairMain(){return appState.discovery.main.name;}
-function typeLabel(t){return {existing:'Existing',upgrade:'Upgrade',missing:'Missing',replace:'Replace'}[t]||'Existing';}
+function typeLabel(t){return {existing:'On Menu',missing:'Opportunity'}[t]||'On Menu';}
+function addToMenu(id){const n=appState.pairing.nodes.find(x=>x.id===id);if(n){n.type='existing';renderPairing();}}
+function removeFromMenu(id){const n=appState.pairing.nodes.find(x=>x.id===id);if(n){n.type='missing';renderPairing();}}
 function nodeSize(name){const d=metricsFor(name).demand;return Math.round(Math.max(46,Math.min(92,46+(d-70)*1.4)));}
 function borderW(name){const m=parseFloat(metricsFor(name).margin.replace('$',''))||1;return Math.max(1.5,Math.min(6,1.5+m/5)).toFixed(1);}
 function nodeCompat(n){const dist=Math.hypot(n.fx,n.fy);return Math.max(0.05,1-dist/1.5);}
@@ -708,12 +714,13 @@ function renderPairPanel(){
   const panel=document.getElementById('pair-panel');if(!panel)return;
   const id=appState.pairing.selectedId;
   if(!id){panel.classList.remove('open');panel.innerHTML='';return;}
-  let name,badge;
-  if(id==='center'){name=pairMain();badge='Main';}
-  else{const n=appState.pairing.nodes.find(x=>x.id===id);if(!n){panel.classList.remove('open');panel.innerHTML='';return;}name=n.name;badge=typeLabel(n.type);}
+  let name,badge,isCenter=id==='center',onMenu=true;
+  if(isCenter){name=pairMain();badge='Main';}
+  else{const n=appState.pairing.nodes.find(x=>x.id===id);if(!n){panel.classList.remove('open');panel.innerHTML='';return;}name=n.name;badge=typeLabel(n.type);onMenu=n.type==='existing';}
   const met=metricsFor(name),info=dishInfo(name);
-  const swap=id==='center'?'':`<div class="pair-field"><div class="pair-field-label">Swap / Upgrade Options</div><div class="pair-swap-grid">${pairCandidates().map(cn=>{const m=metricsFor(cn),inf=dishInfo(cn);return `<div class="pair-swap-card" onclick="swapPairNode('${id}','${cn}')"><div class="psc-name">${cn}</div><div class="psc-cat">${inf.category}</div><div class="psc-meta">${m.prep} · ${m.margin} · D:${m.demand}</div></div>`;}).join('')}</div></div>`;
-  panel.innerHTML=`<div class="pair-panel-head"><div><div class="pair-panel-title">${name}</div><span class="pair-badge">${badge} · ${info.category}</span></div><button class="pair-panel-close" onclick="closePairPanel()">✕</button></div><div class="pair-panel-body"><div class="pair-field"><div class="pair-field-label">Description</div><div class="pair-field-val">${info.desc}</div></div><div class="pair-field"><div class="pair-field-label">Ingredients</div><div class="pair-chips">${info.ingredients.map(i=>`<span class="pair-chip">${i}</span>`).join('')}</div></div><div class="pair-field"><div class="pair-field-label">Prep Method · Chef</div><div class="pair-field-val">${info.method} · <strong>${info.chef}</strong></div></div><div class="pair-metrics"><div class="pair-metric"><div class="pair-metric-num">${met.demand}</div><div class="pair-metric-lbl">Demand</div></div><div class="pair-metric"><div class="pair-metric-num">${met.prep}</div><div class="pair-metric-lbl">Prep Time</div></div><div class="pair-metric"><div class="pair-metric-num">${met.margin}</div><div class="pair-metric-lbl">Margin</div></div></div><div class="pair-field" style="margin-top:16px"><div class="pair-field-label">AI Notes</div><ul class="pair-notes">${info.notes.map(n=>`<li>${n}</li>`).join('')}</ul></div>${swap}</div>`;
+  const menuCta=isCenter?'':(onMenu?`<button class="btn pair-menu-cta remove" onclick="removeFromMenu('${id}')">Remove from menu</button>`:`<button class="btn primary pair-menu-cta" onclick="addToMenu('${id}')">+ Add to menu</button>`);
+  const swap=isCenter?'':`<div class="pair-field"><div class="pair-field-label">Swap / Upgrade Options</div><div class="pair-swap-grid">${pairCandidates().map(cn=>{const m=metricsFor(cn),inf=dishInfo(cn);return `<div class="pair-swap-card" onclick="swapPairNode('${id}','${cn}')"><div class="psc-name">${cn}</div><div class="psc-cat">${inf.category}</div><div class="psc-meta">${m.prep} · ${m.margin} · D:${m.demand}</div></div>`;}).join('')}</div></div>`;
+  panel.innerHTML=`<div class="pair-panel-head"><div><div class="pair-panel-title">${name}</div><span class="pair-badge">${badge} · ${info.category}</span></div><button class="pair-panel-close" onclick="closePairPanel()">✕</button></div><div class="pair-panel-body">${menuCta}<div class="pair-field"><div class="pair-field-label">Description</div><div class="pair-field-val">${info.desc}</div></div><div class="pair-field"><div class="pair-field-label">Ingredients</div><div class="pair-chips">${info.ingredients.map(i=>`<span class="pair-chip">${i}</span>`).join('')}</div></div><div class="pair-field"><div class="pair-field-label">Prep Method · Chef</div><div class="pair-field-val">${info.method} · <strong>${info.chef}</strong></div></div><div class="pair-metrics"><div class="pair-metric"><div class="pair-metric-num">${met.demand}</div><div class="pair-metric-lbl">Demand</div></div><div class="pair-metric"><div class="pair-metric-num">${met.prep}</div><div class="pair-metric-lbl">Prep Time</div></div><div class="pair-metric"><div class="pair-metric-num">${met.margin}</div><div class="pair-metric-lbl">Margin</div></div></div><div class="pair-field" style="margin-top:16px"><div class="pair-field-label">AI Notes</div><ul class="pair-notes">${info.notes.map(n=>`<li>${n}</li>`).join('')}</ul></div>${swap}</div>`;
   panel.classList.add('open');
 }
 function deriveTasks(){const tasks=[];appState.sharedDish.methodology.forEach(step=>{step.chefs.forEach(chef=>{tasks.push({title:step.title,chef,startTime:step.startTime,duration:parseInt(step.duration,10),process:step.process,ingredients:step.ingredients});});});return tasks;}
