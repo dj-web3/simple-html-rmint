@@ -231,7 +231,7 @@
     .pair-graph-panel { flex:1 1 440px; padding:0; overflow:hidden; min-width:360px; }
     .pair-stage { position:relative; height:480px; background-color:var(--ivory); background-image:radial-gradient(circle, var(--g200) 1px, transparent 1px); background-size:26px 26px; overflow:hidden; }
     .pair-svg { position:absolute; inset:0; pointer-events:none; z-index:1; }
-    .pair-axis { position:absolute; font-family:var(--mono); font-size:9px; letter-spacing:.14em; color:var(--g300); text-transform:uppercase; pointer-events:none; z-index:1; }
+    .pair-axis { position:absolute; font-family:var(--mono); font-size:10px; font-weight:600; letter-spacing:.14em; color:var(--g700); text-transform:uppercase; pointer-events:none; z-index:1; }
     .pair-node { position:absolute; transform:translate(-50%,-50%); background:var(--paper); border:1.5px solid var(--g500); display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; transition:box-shadow 150ms; box-shadow:0 2px 8px rgba(20,20,19,.06); }
     .pair-node:hover { box-shadow:0 6px 18px rgba(20,20,19,.16); }
     .pair-node.sel { border-color:var(--clay); box-shadow:0 0 0 3px rgba(217,119,87,.25); }
@@ -269,6 +269,12 @@
     .pair-notes li::before { content:'✓'; position:absolute; left:0; color:var(--olive); font-weight:700; }
     .pair-chips { display:flex; flex-wrap:wrap; gap:6px; }
     .pair-chip { background:var(--g100); border:1px solid var(--g300); border-radius:999px; padding:3px 10px; font-size:11px; font-family:var(--mono); color:var(--g700); }
+    .pair-swap-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
+    .pair-swap-card { border:1.5px solid var(--g300); border-radius:10px; padding:8px 10px; cursor:pointer; transition:border-color 150ms,background 150ms; }
+    .pair-swap-card:hover { border-color:var(--clay); background:var(--oat); }
+    .psc-name { font-family:var(--serif); font-size:13px; font-weight:600; color:var(--slate); line-height:1.2; }
+    .psc-cat { font-family:var(--mono); font-size:9px; text-transform:uppercase; letter-spacing:.04em; color:var(--g500); margin:3px 0; }
+    .psc-meta { font-family:var(--mono); font-size:10px; color:var(--g700); }
   </style>
 </head>
 <body>
@@ -488,7 +494,14 @@ const DISH_METRICS={
   'Papad':{demand:70,prep:'3m',margin:'$0.50',risk:12},
   'Masala Chai':{demand:90,prep:'7m',margin:'$1.50',risk:18},
   'Steamed Rice':{demand:100,prep:'25m',margin:'$3.00',risk:10},
-  'Roti':{demand:100,prep:'8m',margin:'$0.70',risk:14}
+  'Roti':{demand:100,prep:'8m',margin:'$0.70',risk:14},
+  'Mango Lassi':{demand:86,prep:'6m',margin:'$4.50',risk:22},
+  'Paneer Tikka':{demand:84,prep:'22m',margin:'$9.00',risk:40},
+  'Dal Makhani':{demand:89,prep:'35m',margin:'$7.50',risk:30},
+  'Fish Curry':{demand:82,prep:'30m',margin:'$16.00',risk:55},
+  'Idli':{demand:80,prep:'20m',margin:'$2.50',risk:24},
+  'Dosa':{demand:87,prep:'15m',margin:'$4.00',risk:28},
+  'Kheer':{demand:83,prep:'35m',margin:'$4.50',risk:20}
 };
 function metricsFor(name){
   if(DISH_METRICS[name])return {...DISH_METRICS[name]};
@@ -534,7 +547,7 @@ appState.discovery={editingId:null,slideIndex:0,
   ]};
 function currentSlide(){return appState.discovery.slides[appState.discovery.slideIndex];}
 function renderDiscovery(){renderLattices();renderMetricTable();}
-function latticeInner(name,demand,isMain,subset){return `${isMain?'<span class="lattice-tag">MAIN</span>':''}<div class="lattice-name">${name}</div><div class="lattice-demand"><span class="ld-dot"></span>${demand}% DEMAND</div>${subset||''}`;}
+function latticeInner(name,demand,isMain,subset){return `${isMain?'<span class="lattice-tag">MAIN</span>':''}<div class="lattice-name">${name}</div><div class="lattice-demand"><span class="ld-dot"></span>${demand} DEMAND</div>${subset||''}`;}
 function latticeEditor(id,item){
   const used=new Set([appState.discovery.main.name,...currentSlide().items.map(i=>i.name)]);
   const opts=[item.name,...appState.discovery.pool.filter(n=>!used.has(n))];
@@ -549,7 +562,7 @@ function orbitPos(item){
 }
 function subsetChipHtml(it){
   if(appState.discovery.editingId===it.id)return latticeEditor(it.id,it);
-  return `<span class="subset-chip" onclick="openLatticeEditor('${it.id}')">${it.name} · 100%</span>`;
+  return `<span class="subset-chip" onclick="openLatticeEditor('${it.id}')">${it.name} · ${metricsFor(it.name).demand}</span>`;
 }
 function renderLattices(){
   const d=appState.discovery,slide=currentSlide();
@@ -589,7 +602,7 @@ function nextSlide(){const d=appState.discovery;goSlide((d.slideIndex+1)%d.slide
 function prevSlide(){const d=appState.discovery;goSlide((d.slideIndex-1+d.slides.length)%d.slides.length);}
 function renderMetricTable(){
   const all=[appState.discovery.main.name,...currentSlide().items.map(i=>i.name)].map(n=>({name:n,...metricsFor(n)}));
-  const rows=all.sort((a,b)=>b.demand-a.demand).map(it=>`<tr><td class="metric-name">${it.name}</td><td><span class="metric-prep">◷ ${it.prep}</span></td><td><span class="metric-pill">${it.margin}</span></td><td><span class="demand-cell-val">${it.demand}%</span><div class="demand-bar"><div class="demand-fill" style="width:${it.demand}%"></div></div></td><td><span class="ai-note">${aiNote(it.name)}</span></td></tr>`).join('');
+  const rows=all.sort((a,b)=>b.demand-a.demand).map(it=>`<tr><td class="metric-name">${it.name}</td><td><span class="metric-prep">◷ ${it.prep}</span></td><td><span class="metric-pill">${it.margin}</span></td><td><span class="demand-cell-val">${it.demand}</span></td><td><span class="ai-note">${aiNote(it.name)}</span></td></tr>`).join('');
   document.getElementById('metric-tbody').innerHTML=rows;
 }
 /* ===== Pairing / Menu Relationship Map ===== */
@@ -605,19 +618,28 @@ const DISH_INFO={
   'Mango Lassi':{category:'Beverage',desc:'Thick sweet yogurt smoothie blended with ripe mango.',ingredients:['Yogurt','Mango','Sugar','Cardamom'],method:'Blended',chef:'JUNIOR',notes:['Premium beverage upgrade.','Strong summer/seasonal uplift.','High-margin impulse add.']},
   'Paneer Tikka':{category:'Starter',desc:'Grilled spiced cottage cheese with peppers and onion.',ingredients:['Paneer','Yogurt','Bell Pepper','Spices'],method:'Tandoor-grilled',chef:'STATION',notes:['Vegetarian upgrade opportunity.','Broadens the pairing basket.','Bundles with mint chutney.']},
   'Papad':{category:'Side',desc:'Crisp roasted lentil wafer.',ingredients:['Lentil Flour','Cumin','Salt'],method:'Roasted',chef:'TRAINEE',notes:['Under-attached; easy upsell.','Near-zero prep effort.','Add as a table starter.']},
-  'Masala Chai':{category:'Beverage',desc:'Spiced milk tea simmered with cardamom and ginger.',ingredients:['Tea','Milk','Cardamom','Ginger'],method:'Simmered',chef:'JUNIOR',notes:['Consider replacing low-demand beverages.','Comforting close to the meal.','Steady all-day performer.']}
+  'Masala Chai':{category:'Beverage',desc:'Spiced milk tea simmered with cardamom and ginger.',ingredients:['Tea','Milk','Cardamom','Ginger'],method:'Simmered',chef:'JUNIOR',notes:['Consider replacing low-demand beverages.','Comforting close to the meal.','Steady all-day performer.']},
+  'Butter Naan':{category:'Bread',desc:'Buttery tandoor-baked flatbread brushed with ghee.',ingredients:['Flour','Yogurt','Butter','Yeast'],method:'Tandoor-baked',chef:'STATION',notes:['Premium bread upgrade over plain naan.','Strong attach to rich gravies.','High margin, low effort.']},
+  'Tandoori Roti':{category:'Bread',desc:'Whole-wheat flatbread crisped in the tandoor.',ingredients:['Whole Wheat Flour','Water','Salt'],method:'Tandoor-baked',chef:'STATION',notes:['Lighter bread option.','Pairs with most curries.','Very low prep cost.']},
+  'Jeera Rice':{category:'Rice',desc:'Basmati rice tempered with cumin seeds.',ingredients:['Basmati Rice','Cumin','Ghee'],method:'Steamed',chef:'JUNIOR',notes:['Simple staple side.','Broad pairing appeal.','Easy kitchen throughput.']},
+  'Dal Makhani':{category:'Curry',desc:'Slow-cooked black lentils in a buttery cream gravy.',ingredients:['Black Lentils','Butter','Cream','Tomato'],method:'Slow-simmered',chef:'SOUS',notes:['Vegetarian crowd favourite.','Excellent combo anchor with naan.','High repeat-order rate.']},
+  'Fish Curry':{category:'Curry',desc:'Tangy coastal fish curry with coconut and tamarind.',ingredients:['Fish','Coconut','Tamarind','Curry Leaves'],method:'Simmered',chef:'SOUS',notes:['Premium seafood upgrade.','Regional signature appeal.','Higher unit margin.']},
+  'Idli':{category:'Breakfast',desc:'Steamed fermented rice-and-lentil cakes.',ingredients:['Rice','Urad Dal','Salt'],method:'Steamed',chef:'JUNIOR',notes:['Light, healthy option.','Strong breakfast demand.','Very low prep cost.']},
+  'Dosa':{category:'Breakfast',desc:'Crisp fermented rice-and-lentil crepe.',ingredients:['Rice','Urad Dal','Oil'],method:'Griddled',chef:'STATION',notes:['High-demand all-day item.','Good margin with fast prep.','Pairs with chutney and sambar.']},
+  'Kheer':{category:'Dessert',desc:'Slow-cooked rice pudding with cardamom and nuts.',ingredients:['Rice','Milk','Sugar','Cardamom'],method:'Slow-simmered',chef:'TRAINEE',notes:['Comforting dessert finisher.','Lifts average order value.','Batch-prep friendly.']}
 };
 function dishInfo(name){return DISH_INFO[name]||{category:'Dish',desc:name+' — a house preparation crafted to complement the main dish.',ingredients:["Chef's selection"],method:'House method',chef:'SOUS',notes:[aiNote(name),'Steady repeat-order performer.','Pairs cleanly with the main dish.']};}
 appState.pairing={selectedId:null,
+  pool:['Butter Naan','Tandoori Roti','Jeera Rice','Dal Makhani','Fish Curry','Idli','Dosa','Kheer'],
   nodes:[
     {id:'p1',name:'Naan',type:'existing',fx:0.25,fy:-0.15},
     {id:'p2',name:'Chicken Tikka',type:'existing',fx:-0.55,fy:-0.3},
     {id:'p3',name:'Gulab Jamun',type:'existing',fx:0.15,fy:0.8},
     {id:'p4',name:'Raita',type:'existing',fx:0.72,fy:0.05},
-    {id:'p5',name:'Mango Lassi',type:'upgrade',fx:0.8,fy:0.5},
-    {id:'p6',name:'Paneer Tikka',type:'upgrade',fx:-0.45,fy:0.18},
+    {id:'p5',name:'Mango Lassi',type:'missing',fx:0.8,fy:0.5},
+    {id:'p6',name:'Paneer Tikka',type:'missing',fx:-0.45,fy:0.18},
     {id:'p7',name:'Papad',type:'missing',fx:-0.18,fy:-0.62},
-    {id:'p8',name:'Masala Chai',type:'replace',fx:0.5,fy:0.55}
+    {id:'p8',name:'Masala Chai',type:'existing',fx:0.5,fy:0.55}
   ]};
 function pairMain(){return appState.discovery.main.name;}
 function typeLabel(t){return {existing:'Existing',upgrade:'Upgrade',missing:'Missing',replace:'Replace'}[t]||'Existing';}
@@ -627,7 +649,7 @@ function nodeCompat(n){const dist=Math.hypot(n.fx,n.fy);return Math.max(0.05,1-d
 function renderPairing(){renderPairPanel();renderPairGraph();}
 function renderPairLegend(){
   const el=document.getElementById('pair-legend');if(!el)return;
-  el.innerHTML=`<div class="pair-legend-item"><span class="pair-legend-swatch pls-existing"></span>Existing</div><div class="pair-legend-item"><span class="pair-legend-swatch pls-upgrade"></span>Upgrade</div><div class="pair-legend-item"><span class="pair-legend-swatch pls-missing"></span>Missing</div><div class="pair-legend-item"><span class="pair-legend-swatch pls-replace"></span>Replace</div>`;
+  el.innerHTML=`<div class="pair-legend-item"><span class="pair-legend-swatch pls-existing"></span>Current</div><div class="pair-legend-item"><span class="pair-legend-swatch pls-missing"></span>Missing / Opportunity</div>`;
 }
 function renderPairGraph(){
   const stage=document.getElementById('pair-stage');if(!stage)return;
@@ -673,6 +695,15 @@ function showPairTip(e,id){
 function hidePairTip(){const t=document.getElementById('pair-tooltip');if(t)t.style.display='none';}
 function selectPairNode(id){appState.pairing.selectedId=id;renderPairing();}
 function closePairPanel(){appState.pairing.selectedId=null;renderPairing();}
+function pairCandidates(){
+  const onGraph=new Set([pairMain(),...appState.pairing.nodes.map(n=>n.name)]);
+  return appState.pairing.pool.filter(n=>!onGraph.has(n)).slice(0,6);
+}
+function swapPairNode(id,newName){
+  const n=appState.pairing.nodes.find(x=>x.id===id);if(!n)return;
+  n.name=newName;n.type='existing';
+  renderPairing();
+}
 function renderPairPanel(){
   const panel=document.getElementById('pair-panel');if(!panel)return;
   const id=appState.pairing.selectedId;
@@ -681,7 +712,8 @@ function renderPairPanel(){
   if(id==='center'){name=pairMain();badge='Main';}
   else{const n=appState.pairing.nodes.find(x=>x.id===id);if(!n){panel.classList.remove('open');panel.innerHTML='';return;}name=n.name;badge=typeLabel(n.type);}
   const met=metricsFor(name),info=dishInfo(name);
-  panel.innerHTML=`<div class="pair-panel-head"><div><div class="pair-panel-title">${name}</div><span class="pair-badge">${badge} · ${info.category}</span></div><button class="pair-panel-close" onclick="closePairPanel()">✕</button></div><div class="pair-panel-body"><div class="pair-field"><div class="pair-field-label">Description</div><div class="pair-field-val">${info.desc}</div></div><div class="pair-field"><div class="pair-field-label">Ingredients</div><div class="pair-chips">${info.ingredients.map(i=>`<span class="pair-chip">${i}</span>`).join('')}</div></div><div class="pair-field"><div class="pair-field-label">Prep Method · Chef</div><div class="pair-field-val">${info.method} · <strong>${info.chef}</strong></div></div><div class="pair-metrics"><div class="pair-metric"><div class="pair-metric-num">${met.demand}</div><div class="pair-metric-lbl">Demand</div></div><div class="pair-metric"><div class="pair-metric-num">${met.prep}</div><div class="pair-metric-lbl">Prep Time</div></div></div><div class="pair-field" style="margin-top:16px"><div class="pair-field-label">AI Notes</div><ul class="pair-notes">${info.notes.map(n=>`<li>${n}</li>`).join('')}</ul></div></div>`;
+  const swap=id==='center'?'':`<div class="pair-field"><div class="pair-field-label">Swap / Upgrade Options</div><div class="pair-swap-grid">${pairCandidates().map(cn=>{const m=metricsFor(cn),inf=dishInfo(cn);return `<div class="pair-swap-card" onclick="swapPairNode('${id}','${cn}')"><div class="psc-name">${cn}</div><div class="psc-cat">${inf.category}</div><div class="psc-meta">${m.prep} · ${m.margin} · D:${m.demand}</div></div>`;}).join('')}</div></div>`;
+  panel.innerHTML=`<div class="pair-panel-head"><div><div class="pair-panel-title">${name}</div><span class="pair-badge">${badge} · ${info.category}</span></div><button class="pair-panel-close" onclick="closePairPanel()">✕</button></div><div class="pair-panel-body"><div class="pair-field"><div class="pair-field-label">Description</div><div class="pair-field-val">${info.desc}</div></div><div class="pair-field"><div class="pair-field-label">Ingredients</div><div class="pair-chips">${info.ingredients.map(i=>`<span class="pair-chip">${i}</span>`).join('')}</div></div><div class="pair-field"><div class="pair-field-label">Prep Method · Chef</div><div class="pair-field-val">${info.method} · <strong>${info.chef}</strong></div></div><div class="pair-metrics"><div class="pair-metric"><div class="pair-metric-num">${met.demand}</div><div class="pair-metric-lbl">Demand</div></div><div class="pair-metric"><div class="pair-metric-num">${met.prep}</div><div class="pair-metric-lbl">Prep Time</div></div><div class="pair-metric"><div class="pair-metric-num">${met.margin}</div><div class="pair-metric-lbl">Margin</div></div></div><div class="pair-field" style="margin-top:16px"><div class="pair-field-label">AI Notes</div><ul class="pair-notes">${info.notes.map(n=>`<li>${n}</li>`).join('')}</ul></div>${swap}</div>`;
   panel.classList.add('open');
 }
 function deriveTasks(){const tasks=[];appState.sharedDish.methodology.forEach(step=>{step.chefs.forEach(chef=>{tasks.push({title:step.title,chef,startTime:step.startTime,duration:parseInt(step.duration,10),process:step.process,ingredients:step.ingredients});});});return tasks;}
