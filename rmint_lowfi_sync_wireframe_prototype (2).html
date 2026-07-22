@@ -144,11 +144,12 @@
     .timeline-hour { border-right:1px solid var(--g200); padding:6px; font-size:11px; text-align:center; font-family:var(--mono); color:var(--g500); background:var(--g100); }
     .timeline-hour:last-child { border-right:none; }
     .timeline-bars { position:relative; height:80px; border:1.5px dashed var(--g300); margin-top:8px; border-radius:6px; }
-    .bar { position:absolute; top:18px; height:42px; border:1.5px solid var(--g300); background:var(--paper); padding:4px 6px; font-size:11px; cursor:pointer; border-radius:6px; transition:border-color 150ms,box-shadow 150ms; }
+    .bar { position:absolute; height:48px; box-sizing:border-box; border:1.5px solid var(--g300); background:var(--paper); padding:5px 7px; font-size:11px; line-height:1.35; cursor:pointer; border-radius:6px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; transition:border-color 150ms,box-shadow 150ms; }
+    .bar strong { display:block; overflow:hidden; text-overflow:ellipsis; }
     .bar:hover { border-color:var(--clay); box-shadow:0 4px 12px rgba(217,119,87,.15); }
     .bar strong { font-family:var(--serif); font-size:12px; }
 
-    .ingredients-modal { position:fixed; inset:0; background:rgba(20,20,19,.25); display:none; align-items:center; justify-content:center; }
+    .ingredients-modal { position:fixed; inset:0; background:rgba(20,20,19,.25); display:none; align-items:center; justify-content:center; z-index:2000; }
     .ingredients-modal-content { width:420px; background:var(--paper); border:1.5px solid var(--g300); padding:20px; border-radius:14px; box-shadow:0 16px 48px rgba(20,20,19,.12); }
     .ingredients-modal-header { display:flex; justify-content:space-between; margin-bottom:16px; align-items:center; }
     .ingredients-modal-header strong { font-family:var(--serif); font-size:17px; }
@@ -342,7 +343,6 @@
     <div style="display:flex; align-items:center; gap:12px">
       <strong id="dish-title">Chicken Biryani</strong>
       <button class="btn" onclick="openIngredientsModal()">Ingredients</button>
-      <button class="btn">Edit</button>
     </div>
     <div class="small">Low-Fi Functional Sync Prototype</div>
   </div>
@@ -367,8 +367,12 @@
           <strong>Ingredients</strong>
           <button class="btn" onclick="closeIngredientsModal()">Close</button>
         </div>
-        <div id="ingredients-modal-list"></div>
-        <button class="btn primary" style="margin-top:12px">Add Ingredient</button>
+        <div id="ingredients-modal-list" style="max-height:50vh; overflow-y:auto;"></div>
+        <div style="display:flex; gap:8px; margin-top:14px;">
+          <input id="ingredient-name" placeholder="Ingredient name" style="flex:1; margin:0;" onkeydown="if(event.key==='Enter')addIngredient()" />
+          <input id="ingredient-qty" placeholder="Qty" style="width:96px; margin:0;" onkeydown="if(event.key==='Enter')addIngredient()" />
+        </div>
+        <button class="btn primary" style="margin-top:10px; width:100%;" onclick="addIngredient()">+ Add Ingredient</button>
       </div>
     </div>
 
@@ -724,7 +728,9 @@ function renderPairPanel(){
   panel.classList.add('open');
 }
 function deriveTasks(){const tasks=[];appState.sharedDish.methodology.forEach(step=>{step.chefs.forEach(chef=>{tasks.push({title:step.title,chef,startTime:step.startTime,duration:parseInt(step.duration,10),process:step.process,ingredients:step.ingredients});});});return tasks;}
-function renderIngredients(){const modalContainer=document.getElementById('ingredients-modal-list');const html=appState.sharedDish.ingredients.map(item=>`<div class="ingredient-item"><strong>${item.name}</strong><div class="small">${item.quantity}</div></div>`).join('');if(modalContainer){modalContainer.innerHTML=html;}}
+function renderIngredients(){const c=document.getElementById('ingredients-modal-list');if(!c)return;c.innerHTML=appState.sharedDish.ingredients.map((item,i)=>`<div class="ingredient-item" style="display:flex;justify-content:space-between;align-items:center;gap:10px;"><div><strong>${item.name}</strong><div class="small">${item.quantity}</div></div><button class="btn" style="padding:4px 10px;font-size:11px;flex-shrink:0;" onclick="removeIngredient(${i})">Remove</button></div>`).join('');}
+function addIngredient(){const n=document.getElementById('ingredient-name'),q=document.getElementById('ingredient-qty');const name=(n.value||'').trim();if(!name)return;appState.sharedDish.ingredients.push({name,quantity:(q.value||'').trim()||'—'});n.value='';q.value='';n.focus();renderIngredients();}
+function removeIngredient(i){appState.sharedDish.ingredients.splice(i,1);renderIngredients();}
 let _flowDrag=null,_connDrag=null;
 function findFlowNode(id){const m=appState.sharedDish.methodology.find(s=>s.id===id);if(m)return m;return appState.sharedDish.flowNodes.find(n=>n.id===id);}
 function renderFlowNode(n){
@@ -861,7 +867,26 @@ function renderClockView(){
   const hub=`<circle cx="${CX}" cy="${CY}" r="${rings[3].ri-6}" fill="var(--paper)" stroke="var(--g300)" stroke-width="1.5"/><text class="clock-hub-label" x="${CX}" y="${CY-7}">7AM–7PM</text><text class="clock-hub-label" x="${CX}" y="${CY+8}">SCHEDULE</text>`;
   document.getElementById('clock-face').innerHTML=`<svg width="${SZ}" height="${SZ}" viewBox="0 0 ${SZ} ${SZ}">${ringBg}${segs}${ticks}${hub}</svg>`;
 }
-function renderTimeline(){const tasks=deriveTasks();const hours=['7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM','7PM'];const chefs=['SOUS','STATION','JUNIOR','TRAINEE'];document.getElementById('timeline').innerHTML=`<div class="timeline-header">${hours.map(hour=>`<div class="timeline-hour">${hour}</div>`).join('')}</div>${chefs.map(chef=>`<div><strong>${chef}</strong><div class="timeline-bars">${tasks.filter(task=>task.chef===chef).map(task=>{const parts=task.startTime.split(':');const left=((parseInt(parts[0])-7)*60)+parseInt(parts[1]);const width=task.duration*4;return `<div class="bar" style="left:${left}px;width:${width}px" onclick="showTask('${task.title}','${task.process}','${task.startTime}','${task.duration}','${task.chef}')"><strong>${task.title}</strong><br>${task.startTime} • ${task.duration}m</div>`;}).join('')}</div></div>`).join('')}`;}
+function renderTimeline(){
+  const tasks=deriveTasks();
+  const hours=['7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM','7PM'];
+  const chefs=['SOUS','STATION','JUNIOR','TRAINEE'];
+  const WIN=720,S=100/13/2,SPAN=100-2*S,MINW=3.4,LANE_H=56,PAD=8; /* 12h window, aligned to hour-label centres */
+  const rows=chefs.map(chef=>{
+    const list=tasks.filter(t=>t.chef===chef).map(t=>{
+      const p=t.startTime.split(':');const startMin=Math.max(0,(parseInt(p[0])-7)*60+parseInt(p[1]));
+      let left=S+(startMin/WIN)*SPAN;let width=Math.max((t.duration/WIN)*SPAN,MINW);
+      if(left+width>S+SPAN)width=S+SPAN-left;
+      return {t,left,width};
+    }).sort((a,b)=>a.left-b.left);
+    const laneRight=[];
+    list.forEach(it=>{let lane=laneRight.findIndex(r=>r<=it.left-0.2);if(lane===-1){lane=laneRight.length;laneRight.push(0);}laneRight[lane]=it.left+it.width;it.lane=lane;});
+    const lanes=Math.max(1,laneRight.length);const h=PAD*2+lanes*LANE_H-8;
+    const bars=list.map(it=>`<div class="bar" style="left:${it.left}%;width:${it.width}%;top:${PAD+it.lane*LANE_H}px" onclick="showTask('${it.t.title}','${it.t.process}','${it.t.startTime}','${it.t.duration}','${it.t.chef}')"><strong>${it.t.title}</strong>${it.t.startTime} • ${it.t.duration}m</div>`).join('');
+    return `<div><strong>${chef}</strong><div class="timeline-bars" style="height:${h}px">${bars}</div></div>`;
+  }).join('');
+  document.getElementById('timeline').innerHTML=`<div class="timeline-header">${hours.map(hour=>`<div class="timeline-hour">${hour}</div>`).join('')}</div>${rows}`;
+}
 function toggleYTPill(){document.getElementById('yt-pill').classList.toggle('active');}
 /* ===== Recipe Engine ===== */
 const GENERIC_QTY={'Aromatics':'50g','Cooking Oil':'30ml','Salt':'to taste','Onion':'200g','Garlic':'20g','Ginger':'15g','Main Ingredient':'600g','Spice Blend':'30g','Stock':'500ml','Seasoning':'to taste','Fresh Herbs':'20g','Garnish':'10g'};
