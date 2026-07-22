@@ -149,6 +149,41 @@
     .timeline-tooltip { position:fixed; display:none; background:var(--slate); color:white; border-radius:8px; padding:8px 11px; font-size:11px; line-height:1.55; z-index:3000; pointer-events:none; box-shadow:0 8px 24px rgba(0,0,0,.22); max-width:220px; }
     .timeline-tooltip strong { font-family:var(--serif); font-weight:600; font-size:12px; }
     .timeline-tooltip .tt-row { font-family:var(--mono); font-size:10px; color:var(--oat); }
+
+    /* ===== Guide step videos (HeyGen) ===== */
+    .btn:disabled,.btn.primary:disabled { opacity:.55; cursor:default; }
+    .guide-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; gap:12px; flex-wrap:wrap; }
+    .guide-head h3 { margin-bottom:0; }
+    .guide-head-actions { display:flex; align-items:center; gap:12px; }
+    .guide-video-status { font-family:var(--mono); font-size:11px; color:var(--g500); letter-spacing:.03em; }
+    .guide-cards-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(240px,1fr)); gap:16px; }
+    .step-video { position:relative; height:150px; border-radius:10px; margin-bottom:10px; overflow:hidden; border:1.5px solid var(--g200); display:flex; align-items:center; justify-content:center; }
+    .step-video.idle { background:var(--g100); flex-direction:column; gap:8px; }
+    .step-video.idle .sv-icon { font-size:30px; color:var(--g300); }
+    .step-video.idle .sv-idle-label { font-family:var(--mono); font-size:10px; color:var(--g500); letter-spacing:.04em; }
+    .step-video.processing { background:linear-gradient(110deg,var(--g100) 30%,var(--paper) 50%,var(--g100) 70%); background-size:200% 100%; animation:shimmer 1.4s linear infinite; flex-direction:column; gap:10px; }
+    @keyframes shimmer { to { background-position:-200% 0; } }
+    .step-video.processing .sv-spinner { width:26px; height:26px; border:3px solid var(--g300); border-top-color:var(--clay); border-radius:50%; animation:spin .7s linear infinite; }
+    .step-video.processing .sv-status { font-family:var(--mono); font-size:10px; color:var(--g700); letter-spacing:.03em; }
+    .step-video.ready { cursor:pointer; background:radial-gradient(circle at 50% 38%, #3a3a37, var(--slate)); }
+    .step-video.ready .sv-avatar { width:60px; height:60px; border-radius:50%; background:var(--clay); color:white; font-family:var(--serif); font-size:24px; font-weight:600; display:flex; align-items:center; justify-content:center; box-shadow:0 4px 16px rgba(0,0,0,.35); }
+    .step-video.ready .sv-play { position:absolute; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.92); color:var(--slate); display:flex; align-items:center; justify-content:center; font-size:15px; padding-left:3px; transition:transform 150ms; }
+    .step-video.ready:hover .sv-play { transform:scale(1.12); }
+    .step-video.ready .sv-badge { position:absolute; bottom:8px; right:8px; font-family:var(--mono); font-size:9px; color:white; background:rgba(0,0,0,.5); padding:2px 7px; border-radius:999px; letter-spacing:.03em; }
+    .step-video.ready .sv-caption { position:absolute; bottom:8px; left:8px; font-family:var(--mono); font-size:9px; color:rgba(255,255,255,.85); max-width:58%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .step-video .sv-outdated { position:absolute; top:8px; left:8px; font-family:var(--mono); font-size:9px; color:white; background:#C0553E; padding:2px 7px; border-radius:999px; letter-spacing:.03em; z-index:2; }
+    .stepvid-overlay { position:fixed; inset:0; background:rgba(20,20,19,.5); display:none; align-items:center; justify-content:center; z-index:2500; }
+    .stepvid-overlay.open { display:flex; }
+    .stepvid-modal { width:420px; max-width:92vw; background:var(--paper); border-radius:14px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.25); }
+    .stepvid-head { display:flex; justify-content:space-between; align-items:center; padding:14px 16px; border-bottom:1.5px solid var(--g200); }
+    .stepvid-title { font-family:var(--serif); font-size:16px; font-weight:600; }
+    .stepvid-stage { position:relative; height:300px; background:radial-gradient(circle at 50% 34%, #3a3a37, var(--slate)); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px; }
+    .stepvid-stage .svm-avatar { width:96px; height:96px; border-radius:50%; background:var(--clay); color:white; font-family:var(--serif); font-size:38px; font-weight:600; display:flex; align-items:center; justify-content:center; box-shadow:0 6px 22px rgba(0,0,0,.4); }
+    .stepvid-stage .svm-wave { display:flex; gap:4px; align-items:flex-end; height:22px; }
+    .stepvid-stage .svm-wave span { width:4px; background:var(--clay); border-radius:2px; animation:wave 1s ease-in-out infinite; }
+    @keyframes wave { 0%,100%{height:6px;} 50%{height:22px;} }
+    .stepvid-caption { position:absolute; bottom:16px; left:16px; right:16px; text-align:center; color:white; font-size:13px; line-height:1.5; background:rgba(0,0,0,.45); padding:8px 12px; border-radius:8px; min-height:40px; box-sizing:border-box; }
+    .stepvid-note { padding:12px 16px; font-family:var(--mono); font-size:10px; color:var(--g500); letter-spacing:.02em; text-align:center; }
     .bar:hover { border-color:var(--clay); box-shadow:0 4px 12px rgba(217,119,87,.15); }
     .bar strong { font-family:var(--serif); font-size:12px; }
 
@@ -408,7 +443,27 @@
 
     <div class="view" id="guide-view">
       <div class="guide-layout">
-        <div class="panel"><h3>Guide Cards</h3><div id="guide-cards"></div></div>
+        <div class="panel">
+          <div class="guide-head">
+            <h3>Guide Cards</h3>
+            <div class="guide-head-actions">
+              <span class="guide-video-status" id="guide-video-status"></span>
+              <button class="btn primary" id="gen-videos-btn" onclick="generateStepVideos()">🎬 Generate Step Videos</button>
+            </div>
+          </div>
+          <div id="guide-cards" class="guide-cards-grid"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="stepvid-overlay" id="stepvid-overlay" onclick="closeStepVideo()">
+      <div class="stepvid-modal" onclick="event.stopPropagation()">
+        <div class="stepvid-head">
+          <div class="stepvid-title" id="stepvid-title"></div>
+          <button class="pair-panel-close" onclick="closeStepVideo()">✕</button>
+        </div>
+        <div class="stepvid-stage" id="stepvid-stage"></div>
+        <div class="stepvid-note">Simulated HeyGen preview — real integration renders an MP4 talking-avatar here.</div>
       </div>
     </div>
 
@@ -840,7 +895,77 @@ function addStep(){const id=String(Date.now());const cnt=appState.sharedDish.met
 function deleteFlowNode(e,id){e.stopPropagation();const idx=appState.sharedDish.methodology.findIndex(s=>s.id===id);if(idx===-1)return;appState.sharedDish.methodology.splice(idx,1);appState.sharedDish.connections=appState.sharedDish.connections.filter(c=>c.from!==id&&c.to!==id);sync();}
 function removeFlowConnection(e,from,to){e.stopPropagation();appState.sharedDish.connections=appState.sharedDish.connections.filter(c=>!(c.from===from&&c.to===to));drawFlowEdges();}
 function renderMethodology(){}
-function renderGuide(){document.getElementById('guide-cards').innerHTML=appState.sharedDish.methodology.map(step=>`<div class="guide-card"><div class="guide-card-thumb"><div class="guide-thumb-icon">▶</div></div><div class="node-title">${step.title}</div><div class="small">Process: ${step.process}</div><div class="small">Start: ${step.startTime}</div><div class="small">Duration: ${step.duration}</div><div class="small">Chefs: ${step.chefs.join(', ')}</div><div class="small">Ingredients: ${step.ingredients.join(', ')}</div></div>`).join('');}
+/* ===== HeyGen step-video engine (simulation; swap heygenGenerate for a real backend) ===== */
+appState.stepVideos={};
+function stepHash(step){return [step.title,step.process,step.duration,step.startTime,step.ingredients.join(','),step.chefs.join(',')].join('|');}
+function buildStepScript(step,i){
+  const chefs=step.chefs.length?step.chefs.join(' and '):'the kitchen team';
+  const ing=step.ingredients.length?step.ingredients.join(', '):'the prepped components';
+  return `Step ${i+1}: ${step.title}. ${step.process} for ${step.duration}, starting at ${step.startTime}. This station is run by ${chefs}. You'll need ${ing}.`;
+}
+/* ── SWAP POINT for production ──────────────────────────────────────
+   Replace this body with a call to your serverless proxy that POSTs
+   HeyGen /v2/video/generate and polls /v1/video_status.get, then
+   resolves { url, durationSec } with the finished MP4 URL.            */
+function heygenGenerate(script,opts){
+  return new Promise(resolve=>{
+    const ms=1500+Math.random()*2200;
+    setTimeout(()=>resolve({url:'mock://heygen/'+Date.now(),durationSec:8+Math.floor(Math.random()*12)}),ms);
+  });
+}
+function generateStepVideos(){
+  const steps=appState.sharedDish.methodology;
+  steps.forEach((step,i)=>{
+    const h=stepHash(step),cur=appState.stepVideos[step.id];
+    if(cur&&cur.status==='ready'&&cur.hash===h)return; /* unchanged → keep cached video */
+    const script=buildStepScript(step,i);
+    appState.stepVideos[step.id]={status:'processing',hash:h,script};
+    heygenGenerate(script,{chef:step.chefs[0]||'SOUS'}).then(res=>{
+      appState.stepVideos[step.id]={status:'ready',hash:h,script,url:res.url,durationSec:res.durationSec};
+      renderGuide();
+    });
+  });
+  renderGuide();
+}
+function fmtDur(s){return '0:'+String(s).padStart(2,'0');}
+function renderGuide(){
+  const steps=appState.sharedDish.methodology;
+  const grid=document.getElementById('guide-cards');
+  if(grid)grid.innerHTML=steps.map((step,i)=>{
+    const v=appState.stepVideos[step.id],h=stepHash(step);let vid;
+    if(v&&v.status==='processing'){
+      vid=`<div class="step-video processing"><div class="sv-spinner"></div><div class="sv-status">Generating with HeyGen…</div></div>`;
+    }else if(v&&v.status==='ready'){
+      const stale=v.hash!==h?`<span class="sv-outdated">⟳ outdated</span>`:'';
+      const av=(step.chefs[0]||'AI')[0];
+      vid=`<div class="step-video ready" onclick="playStepVideo('${step.id}')">${stale}<div class="sv-avatar">${av}</div><div class="sv-play">▶</div><div class="sv-caption">${step.title}</div><div class="sv-badge">HeyGen · ${fmtDur(v.durationSec)}</div></div>`;
+    }else{
+      vid=`<div class="step-video idle"><div class="sv-icon">▶</div><div class="sv-idle-label">No video yet</div></div>`;
+    }
+    return `<div class="guide-card">${vid}<div class="node-title">${step.title}</div><div class="small">Process: ${step.process}</div><div class="small">Start: ${step.startTime}</div><div class="small">Duration: ${step.duration}</div><div class="small">Chefs: ${step.chefs.join(', ')}</div><div class="small">Ingredients: ${step.ingredients.join(', ')}</div></div>`;
+  }).join('');
+  const total=steps.length;
+  const ready=steps.filter(s=>{const v=appState.stepVideos[s.id];return v&&v.status==='ready'&&v.hash===stepHash(s);}).length;
+  const processing=steps.filter(s=>{const v=appState.stepVideos[s.id];return v&&v.status==='processing';}).length;
+  const st=document.getElementById('guide-video-status');
+  if(st)st.textContent=processing?`Generating… ${ready}/${total} ready`:(ready?`${ready}/${total} videos ready`:'');
+  const btn=document.getElementById('gen-videos-btn');
+  if(btn){btn.disabled=processing>0;btn.textContent=processing>0?'Generating…':(ready>0?'🎬 Regenerate Videos':'🎬 Generate Step Videos');}
+}
+let _svTimer=null;
+function playStepVideo(id){
+  const v=appState.stepVideos[id];if(!v)return;
+  const step=appState.sharedDish.methodology.find(s=>s.id===id);
+  document.getElementById('stepvid-title').textContent=step?step.title:'Step Video';
+  const av=((step&&step.chefs[0])?step.chefs[0]:'AI')[0];
+  const bars=Array.from({length:7},(_,i)=>`<span style="animation-delay:${(i*0.12).toFixed(2)}s"></span>`).join('');
+  document.getElementById('stepvid-stage').innerHTML=`<div class="svm-avatar">${av}</div><div class="svm-wave">${bars}</div><div class="stepvid-caption" id="stepvid-caption"></div>`;
+  document.getElementById('stepvid-overlay').classList.add('open');
+  const words=v.script.split(' ');let n=0;const cap=document.getElementById('stepvid-caption');
+  clearInterval(_svTimer);cap.textContent='';
+  _svTimer=setInterval(()=>{if(n>=words.length){clearInterval(_svTimer);return;}cap.textContent=words.slice(0,n+1).join(' ');n++;},180);
+}
+function closeStepVideo(){clearInterval(_svTimer);document.getElementById('stepvid-overlay').classList.remove('open');}
 function renderClockCards(){document.getElementById('clock-cards').innerHTML=appState.sharedDish.methodology.map((step,index)=>`<div class="clock-card"><div class="node-title">${step.title}</div><div class="small">${step.process}</div><div class="small">${step.startTime} • ${step.duration}</div><div class="small">Chefs: ${step.chefs.join(', ')}</div><div class="small">Ingredients: ${step.ingredients.join(', ')}</div></div>`).join('');}
 const CHEF_ORDER=['SOUS','STATION','JUNIOR','TRAINEE'];
 const CHEF_COLORS={SOUS:'#D97757',STATION:'#788C5D',JUNIOR:'#5B7FA6',TRAINEE:'#A86A9E'};
@@ -936,6 +1061,7 @@ function applyRecipe(r){
   appState.sharedDish.ingredients=r.ingredients.slice();
   const steps=r.steps.map((s,i)=>({id:String(Date.now()+i),title:s.title,process:s.process,duration:s.duration,startTime:s.startTime,ingredients:s.ingredients.slice(),chefs:s.chefs.slice(),x:200+(i%4)*250,y:200+Math.floor(i/4)*190}));
   appState.sharedDish.methodology=steps;
+  appState.stepVideos={};
   const lastRow=Math.floor((steps.length-1)/4);
   appState.sharedDish.flowNodes=[{id:'_start',type:'start',label:'Start',x:60,y:224},{id:'_end',type:'end',label:'End',x:200+4*250,y:200+lastRow*190+24}];
   const conns=[{from:'_start',to:steps[0].id}];for(let i=0;i<steps.length-1;i++)conns.push({from:steps[i].id,to:steps[i+1].id});conns.push({from:steps[steps.length-1].id,to:'_end'});
