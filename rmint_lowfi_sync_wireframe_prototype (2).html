@@ -140,6 +140,14 @@
     .flow-wrapper { overflow-x:auto; padding:8px 0; }
     .arrow { font-size:28px; font-weight:bold; color:var(--g500); }
 
+    .timeline-head { display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; gap:12px; flex-wrap:wrap; }
+    .timeline-zoom { display:flex; gap:6px; }
+    .tl-zoom-btn { padding:4px 12px; border:1.5px solid var(--g300); border-radius:999px; background:var(--paper); font-family:var(--mono); font-size:11px; cursor:pointer; color:var(--g700); letter-spacing:.02em; transition:border-color 150ms,background 150ms,color 150ms; }
+    .tl-zoom-btn:hover { border-color:var(--clay); color:var(--clay); }
+    .tl-zoom-btn.active { background:var(--clay); color:white; border-color:var(--clay); }
+    .timeline-scroll { overflow-x:auto; overflow-y:hidden; }
+    #timeline { min-width:100%; }
+    .tl-chef { position:sticky; left:0; display:inline-block; font-family:var(--serif); font-weight:600; font-size:15px; background:var(--paper); padding:2px 10px 2px 2px; margin-bottom:2px; border-radius:4px; z-index:6; }
     .timeline-header { display:grid; grid-template-columns:repeat(13,1fr); border:1.5px solid var(--g300); margin-bottom:10px; border-radius:8px; overflow:hidden; }
     .timeline-hour { border-right:1px solid var(--g200); padding:6px; font-size:11px; text-align:center; font-family:var(--mono); color:var(--g500); background:var(--g100); }
     .timeline-hour:last-child { border-right:none; }
@@ -486,7 +494,13 @@
           </div>
         </div>
         <div class="panel">
-          <div id="timeline-view-section"><h3 style="margin-bottom:12px">Timeline View</h3><div id="timeline"></div></div>
+          <div id="timeline-view-section">
+            <div class="timeline-head">
+              <h3 style="margin-bottom:0">Timeline View</h3>
+              <div class="timeline-zoom" id="timeline-zoom"></div>
+            </div>
+            <div class="timeline-scroll" id="timeline-scroll"><div id="timeline"></div></div>
+          </div>
           <div id="clock-view-section" style="display:none">
             <h3 style="margin-bottom:12px">Clock View</h3>
             <div class="clock-layout">
@@ -995,11 +1009,18 @@ function renderClockView(){
   const hub=`<circle cx="${CX}" cy="${CY}" r="${rings[3].ri-6}" fill="var(--paper)" stroke="var(--g300)" stroke-width="1.5"/><text class="clock-hub-label" x="${CX}" y="${CY-7}">7AM–7PM</text><text class="clock-hub-label" x="${CX}" y="${CY+8}">SCHEDULE</text>`;
   document.getElementById('clock-face').innerHTML=`<svg width="${SZ}" height="${SZ}" viewBox="0 0 ${SZ} ${SZ}">${ringBg}${segs}${ticks}${hub}</svg>`;
 }
+let timelineZoom=1;
+function setTimelineZoom(z){timelineZoom=z;renderTimeline();const s=document.getElementById('timeline-scroll');if(s)s.scrollLeft=0;}
+function renderTimelineZoom(){
+  const el=document.getElementById('timeline-zoom');if(!el)return;
+  const levels=[{z:1,l:'Fit'},{z:2,l:'2×'},{z:3,l:'3×'},{z:4,l:'4×'}];
+  el.innerHTML=levels.map(o=>`<button class="tl-zoom-btn ${timelineZoom===o.z?'active':''}" onclick="setTimelineZoom(${o.z})">${o.l}</button>`).join('');
+}
 function renderTimeline(){
   const tasks=deriveTasks();
   const hours=['7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM','7PM'];
   const chefs=['SOUS','STATION','JUNIOR','TRAINEE'];
-  const WIN=720,S=100/13/2,SPAN=100-2*S,MINW=3.4,LANE_H=56,PAD=8; /* 12h window, aligned to hour-label centres */
+  const WIN=720,S=100/13/2,SPAN=100-2*S,MINW=3.4/timelineZoom,LANE_H=56,PAD=8; /* 12h window aligned to hour-label centres; min bar-width floor stays ~constant px as we zoom */
   const rows=chefs.map(chef=>{
     const list=tasks.filter(t=>t.chef===chef).map(t=>{
       const p=t.startTime.split(':');const startMin=Math.max(0,(parseInt(p[0])-7)*60+parseInt(p[1]));
@@ -1011,9 +1032,12 @@ function renderTimeline(){
     list.forEach(it=>{let lane=laneRight.findIndex(r=>r<=it.left-0.2);if(lane===-1){lane=laneRight.length;laneRight.push(0);}laneRight[lane]=it.left+it.width;it.lane=lane;});
     const lanes=Math.max(1,laneRight.length);const h=PAD*2+lanes*LANE_H-8;
     const bars=list.map(it=>`<div class="bar" style="left:${it.left}%;width:${it.width}%;top:${PAD+it.lane*LANE_H}px" onclick="showTask('${it.t.title}','${it.t.process}','${it.t.startTime}','${it.t.duration}','${it.t.chef}')" onmouseenter="showBarTip(event,'${it.t.title}','${it.t.process}','${it.t.startTime}','${it.t.duration}','${it.t.chef}')" onmousemove="moveBarTip(event)" onmouseleave="hideBarTip()"><strong>${it.t.title}</strong>${it.t.startTime} • ${it.t.duration}m</div>`).join('');
-    return `<div><strong>${chef}</strong><div class="timeline-bars" style="height:${h}px">${bars}</div></div>`;
+    return `<div><div class="tl-chef">${chef}</div><div class="timeline-bars" style="height:${h}px">${bars}</div></div>`;
   }).join('');
-  document.getElementById('timeline').innerHTML=`<div class="timeline-header">${hours.map(hour=>`<div class="timeline-hour">${hour}</div>`).join('')}</div>${rows}`;
+  const tl=document.getElementById('timeline');
+  tl.style.width=(timelineZoom*100)+'%';
+  tl.innerHTML=`<div class="timeline-header">${hours.map(hour=>`<div class="timeline-hour">${hour}</div>`).join('')}</div>${rows}`;
+  renderTimelineZoom();
 }
 function toggleYTPill(){document.getElementById('yt-pill').classList.toggle('active');}
 /* ===== Recipe Engine ===== */
