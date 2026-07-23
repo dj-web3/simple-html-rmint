@@ -148,9 +148,12 @@
     .timeline-scroll { overflow-x:auto; overflow-y:hidden; }
     #timeline { min-width:100%; }
     .tl-chef { position:sticky; left:0; display:inline-block; font-family:var(--serif); font-weight:600; font-size:15px; background:var(--paper); padding:2px 10px 2px 2px; margin-bottom:2px; border-radius:4px; z-index:6; }
-    .timeline-header { display:grid; grid-template-columns:repeat(13,1fr); border:1.5px solid var(--g300); margin-bottom:10px; border-radius:8px; overflow:hidden; }
-    .timeline-hour { border-right:1px solid var(--g200); padding:6px; font-size:11px; text-align:center; font-family:var(--mono); color:var(--g500); background:var(--g100); }
-    .timeline-hour:last-child { border-right:none; }
+    .timeline-header { position:relative; height:30px; border:1.5px solid var(--g300); margin-bottom:10px; border-radius:8px; background:var(--g100); overflow:hidden; }
+    .tl-tick { position:absolute; top:0; bottom:0; }
+    .tl-tick.hour { border-left:1px solid var(--g300); }
+    .tl-tick.half { border-left:1px solid var(--g200); }
+    .tl-tick-label { position:absolute; top:50%; left:0; transform:translate(-50%,-50%); font-family:var(--mono); font-size:11px; color:var(--g500); white-space:nowrap; background:var(--g100); padding:0 5px; }
+    .tl-tick.half .tl-tick-label { font-size:9px; color:var(--g500); }
     .timeline-bars { position:relative; height:80px; border:1.5px dashed var(--g300); margin-top:8px; border-radius:6px; }
     .bar { position:absolute; height:48px; box-sizing:border-box; border:1.5px solid var(--g300); background:var(--paper); padding:5px 7px; font-size:11px; line-height:1.35; cursor:pointer; border-radius:6px; overflow:hidden; white-space:nowrap; text-overflow:ellipsis; transition:border-color 150ms,box-shadow 150ms; }
     .bar strong { display:block; overflow:hidden; text-overflow:ellipsis; }
@@ -1018,7 +1021,6 @@ function renderTimelineZoom(){
 }
 function renderTimeline(){
   const tasks=deriveTasks();
-  const hours=['7AM','8AM','9AM','10AM','11AM','12PM','1PM','2PM','3PM','4PM','5PM','6PM','7PM'];
   const chefs=['SOUS','STATION','JUNIOR','TRAINEE'];
   const WIN=720,S=100/13/2,SPAN=100-2*S,MINW=3.4/timelineZoom,LANE_H=56,PAD=8; /* 12h window aligned to hour-label centres; min bar-width floor stays ~constant px as we zoom */
   const rows=chefs.map(chef=>{
@@ -1036,7 +1038,11 @@ function renderTimeline(){
   }).join('');
   const tl=document.getElementById('timeline');
   tl.style.width=(timelineZoom*100)+'%';
-  tl.innerHTML=`<div class="timeline-header">${hours.map(hour=>`<div class="timeline-hour">${hour}</div>`).join('')}</div>${rows}`;
+  const half=timelineZoom>=2;let ticks='';
+  for(let m=0;m<=WIN;m+=(half?30:60)){const h=7+Math.floor(m/60),min=m%60,left=S+(m/WIN)*SPAN;
+    if(min===0)ticks+=`<div class="tl-tick hour" style="left:${left}%"><span class="tl-tick-label">${fmtHour(h)}</span></div>`;
+    else{const hh=h>12?h-12:h;ticks+=`<div class="tl-tick half" style="left:${left}%"><span class="tl-tick-label">${hh}:30</span></div>`;}}
+  tl.innerHTML=`<div class="timeline-header">${ticks}</div>${rows}`;
   renderTimelineZoom();
 }
 function toggleYTPill(){document.getElementById('yt-pill').classList.toggle('active');}
