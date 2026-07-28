@@ -1,0 +1,12 @@
+# Unrelated scaffold living in this repo — not part of the RMINT static app
+FigmaMakecreator/
+
+# Local tooling / private working files, not needed in the deployment
+.claude/
+Pairing.md
+final_recipe_workflow_canvas.html
+
+# Standard excludes
+node_modules/
+*.log
+.DS_Store

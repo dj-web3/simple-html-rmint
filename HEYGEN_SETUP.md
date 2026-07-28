@@ -1,5 +1,12 @@
 # Wiring up the real HeyGen backend
 
+> **Status: LIVE.** This is already deployed and working at
+> **https://simple-html-rmint.vercel.app/rmint_lowfi_sync_wireframe_prototype%20(2).html**
+> (Vercel project `simple-html-rmint`, under account `dmukerji99-2753`, linked to this local checkout of `Haygen-integration`.)
+> Avatar: `Crisanto_Chef_Front_public` ("Crisanto Chef Front"). Voice: `88bb9ee1c81b466eb2a08fdde86d3619` ("Adam Stone", English/male).
+> `HEYGEN_API_KEY` / `HEYGEN_AVATAR_ID` / `HEYGEN_VOICE_ID` are set as encrypted env vars on the Vercel project — not in any file in this repo.
+> Rest of this doc is kept as the general reference / what-to-do-if-you-redeploy-elsewhere guide.
+
 The app's code is done and pushed to the `Haygen-integration` branch. What's left needs **your** accounts and credentials — I can't create those for you. This doc is the exact click-by-click path.
 
 ## What's already built (nothing to do here)
