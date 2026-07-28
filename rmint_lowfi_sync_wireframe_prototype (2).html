@@ -183,6 +183,10 @@
     .step-video.ready .sv-badge { position:absolute; bottom:8px; right:8px; font-family:var(--mono); font-size:9px; color:white; background:rgba(0,0,0,.5); padding:2px 7px; border-radius:999px; letter-spacing:.03em; }
     .step-video.ready .sv-caption { position:absolute; bottom:8px; left:8px; font-family:var(--mono); font-size:9px; color:rgba(255,255,255,.85); max-width:58%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
     .step-video .sv-outdated { position:absolute; top:8px; left:8px; font-family:var(--mono); font-size:9px; color:white; background:#C0553E; padding:2px 7px; border-radius:999px; letter-spacing:.03em; z-index:2; }
+    .step-video.ready.real video { position:absolute; inset:0; width:100%; height:100%; object-fit:cover; background:#000; }
+    .step-video.error { background:#fff1ee; border-color:#C0553E; flex-direction:column; gap:8px; cursor:pointer; }
+    .step-video.error .sv-err-icon { font-size:24px; color:#C0553E; }
+    .step-video.error .sv-err-label { font-family:var(--mono); font-size:10px; color:#C0553E; text-align:center; padding:0 12px; letter-spacing:.02em; }
     .stepvid-overlay { position:fixed; inset:0; background:rgba(20,20,19,.5); display:none; align-items:center; justify-content:center; z-index:2500; }
     .stepvid-overlay.open { display:flex; }
     .stepvid-modal { width:420px; max-width:92vw; background:var(--paper); border-radius:14px; overflow:hidden; box-shadow:0 20px 60px rgba(0,0,0,.25); }
@@ -920,29 +924,72 @@ function buildStepScript(step,i){
   const ing=step.ingredients.length?step.ingredients.join(', '):'the prepped components';
   return `Step ${i+1}: ${step.title}. ${step.process} for ${step.duration}, starting at ${step.startTime}. This station is run by ${chefs}. You'll need ${ing}.`;
 }
-/* ── SWAP POINT for production ──────────────────────────────────────
-   Replace this body with a call to your serverless proxy that POSTs
-   HeyGen /v2/video/generate and polls /v1/video_status.get, then
-   resolves { url, durationSec } with the finished MP4 URL.            */
-function heygenGenerate(script,opts){
+/* ── Real HeyGen call, via the serverless proxy in /api ──────────────
+   POST /api/generate-video -> { video_id }
+   GET  /api/video-status?video_id=... -> { status, video_url, duration }
+   If no backend is deployed (404 — e.g. plain GitHub Pages), we fall
+   back to a local simulation so the UI still demos. Any OTHER failure
+   (bad key, HeyGen error, timeout) is a real error and is surfaced —
+   never silently masked as a fake success.                            */
+function isRealVideoUrl(u){return /^https?:\/\//i.test(u||'');}
+function heygenGenerateMock(){
   return new Promise(resolve=>{
     const ms=1500+Math.random()*2200;
     setTimeout(()=>resolve({url:'mock://heygen/'+Date.now(),durationSec:8+Math.floor(Math.random()*12)}),ms);
   });
+}
+function noBackendErr(){const e=new Error('No HeyGen backend deployed');e.code='NO_BACKEND';return e;}
+async function heygenGenerateLive(script){
+  const genRes=await fetch('/api/generate-video',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({script})});
+  /* Static hosts (GitHub Pages, http-server, etc.) have no real /api route:
+     depending on the server they answer 404, 405, or an HTML error page
+     instead of JSON. Treat any of those as "no backend" and simulate. */
+  if(genRes.status===404||genRes.status===405)throw noBackendErr();
+  const ct=genRes.headers.get('content-type')||'';
+  if(!ct.includes('application/json'))throw noBackendErr();
+  const genData=await genRes.json().catch(()=>({}));
+  if(!genRes.ok)throw new Error(genData.error||('HeyGen request failed ('+genRes.status+')'));
+  const videoId=genData.video_id;
+  const deadline=Date.now()+5*60*1000; /* 5 min safety timeout */
+  while(Date.now()<deadline){
+    await new Promise(r=>setTimeout(r,3000));
+    const statusRes=await fetch('/api/video-status?video_id='+encodeURIComponent(videoId));
+    const statusData=await statusRes.json().catch(()=>({}));
+    if(!statusRes.ok)throw new Error(statusData.error||'Status check failed');
+    if(statusData.status==='completed')return{url:statusData.video_url,durationSec:Math.round(statusData.duration||0)};
+    if(statusData.status==='failed')throw new Error((statusData.error&&statusData.error.message)||'HeyGen reported generation failed');
+  }
+  throw new Error('Timed out waiting for HeyGen render');
+}
+async function heygenGenerate(script,opts){
+  try{return await heygenGenerateLive(script,opts);}
+  catch(e){if(e.code==='NO_BACKEND'){console.info('No HeyGen backend detected — using local simulation.');return heygenGenerateMock(script,opts);}throw e;}
 }
 function generateStepVideos(){
   const steps=appState.sharedDish.methodology;
   steps.forEach((step,i)=>{
     const h=stepHash(step),cur=appState.stepVideos[step.id];
     if(cur&&cur.status==='ready'&&cur.hash===h)return; /* unchanged → keep cached video */
-    const script=buildStepScript(step,i);
-    appState.stepVideos[step.id]={status:'processing',hash:h,script};
-    heygenGenerate(script,{chef:step.chefs[0]||'SOUS'}).then(res=>{
-      appState.stepVideos[step.id]={status:'ready',hash:h,script,url:res.url,durationSec:res.durationSec};
-      renderGuide();
-    });
+    runStepVideo(step,i,h);
   });
   renderGuide();
+}
+function generateSingleStepVideo(id){
+  const i=appState.sharedDish.methodology.findIndex(s=>s.id===id);if(i===-1)return;
+  const step=appState.sharedDish.methodology[i];
+  runStepVideo(step,i,stepHash(step));
+  renderGuide();
+}
+function runStepVideo(step,i,h){
+  const script=buildStepScript(step,i);
+  appState.stepVideos[step.id]={status:'processing',hash:h,script};
+  heygenGenerate(script,{chef:step.chefs[0]||'SOUS'}).then(res=>{
+    appState.stepVideos[step.id]={status:'ready',hash:h,script,url:res.url,durationSec:res.durationSec};
+    renderGuide();
+  }).catch(err=>{
+    appState.stepVideos[step.id]={status:'error',hash:h,script,error:(err&&err.message)||String(err)};
+    renderGuide();
+  });
 }
 function fmtDur(s){return '0:'+String(s).padStart(2,'0');}
 function renderGuide(){
@@ -952,10 +999,17 @@ function renderGuide(){
     const v=appState.stepVideos[step.id],h=stepHash(step);let vid;
     if(v&&v.status==='processing'){
       vid=`<div class="step-video processing"><div class="sv-spinner"></div><div class="sv-status">Generating with HeyGen…</div></div>`;
+    }else if(v&&v.status==='error'){
+      const msg=(v.error||'Generation failed').replace(/"/g,'&quot;');
+      vid=`<div class="step-video error" onclick="generateSingleStepVideo('${step.id}')" title="${msg}"><div class="sv-err-icon">⚠</div><div class="sv-err-label">Generation failed — click to retry</div></div>`;
     }else if(v&&v.status==='ready'){
       const stale=v.hash!==h?`<span class="sv-outdated">⟳ outdated</span>`:'';
-      const av=(step.chefs[0]||'AI')[0];
-      vid=`<div class="step-video ready" onclick="playStepVideo('${step.id}')">${stale}<div class="sv-avatar">${av}</div><div class="sv-play">▶</div><div class="sv-caption">${step.title}</div><div class="sv-badge">HeyGen · ${fmtDur(v.durationSec)}</div></div>`;
+      if(isRealVideoUrl(v.url)){
+        vid=`<div class="step-video ready real" onclick="playStepVideo('${step.id}')">${stale}<video src="${v.url}" muted preload="metadata" playsinline></video><div class="sv-play">▶</div><div class="sv-badge">HeyGen · ${fmtDur(v.durationSec)}</div></div>`;
+      }else{
+        const av=(step.chefs[0]||'AI')[0];
+        vid=`<div class="step-video ready" onclick="playStepVideo('${step.id}')">${stale}<div class="sv-avatar">${av}</div><div class="sv-play">▶</div><div class="sv-caption">${step.title}</div><div class="sv-badge">HeyGen · ${fmtDur(v.durationSec)}</div></div>`;
+      }
     }else{
       vid=`<div class="step-video idle"><div class="sv-icon">▶</div><div class="sv-idle-label">No video yet</div></div>`;
     }
@@ -964,25 +1018,37 @@ function renderGuide(){
   const total=steps.length;
   const ready=steps.filter(s=>{const v=appState.stepVideos[s.id];return v&&v.status==='ready'&&v.hash===stepHash(s);}).length;
   const processing=steps.filter(s=>{const v=appState.stepVideos[s.id];return v&&v.status==='processing';}).length;
+  const errored=steps.filter(s=>{const v=appState.stepVideos[s.id];return v&&v.status==='error';}).length;
   const st=document.getElementById('guide-video-status');
-  if(st)st.textContent=processing?`Generating… ${ready}/${total} ready`:(ready?`${ready}/${total} videos ready`:'');
+  if(st)st.textContent=processing?`Generating… ${ready}/${total} ready`:(errored?`${ready}/${total} ready · ${errored} failed`:(ready?`${ready}/${total} videos ready`:''));
   const btn=document.getElementById('gen-videos-btn');
-  if(btn){btn.disabled=processing>0;btn.textContent=processing>0?'Generating…':(ready>0?'🎬 Regenerate Videos':'🎬 Generate Step Videos');}
+  if(btn){btn.disabled=processing>0;btn.textContent=processing>0?'Generating…':((ready>0||errored>0)?'🎬 Regenerate Videos':'🎬 Generate Step Videos');}
 }
 let _svTimer=null;
 function playStepVideo(id){
-  const v=appState.stepVideos[id];if(!v)return;
+  const v=appState.stepVideos[id];if(!v||v.status!=='ready')return;
   const step=appState.sharedDish.methodology.find(s=>s.id===id);
   document.getElementById('stepvid-title').textContent=step?step.title:'Step Video';
+  const stage=document.getElementById('stepvid-stage');
+  clearInterval(_svTimer);
+  if(isRealVideoUrl(v.url)){
+    stage.innerHTML=`<video src="${v.url}" controls autoplay playsinline style="width:100%;height:100%;object-fit:contain;background:#000;"></video>`;
+    document.getElementById('stepvid-overlay').classList.add('open');
+    return;
+  }
   const av=((step&&step.chefs[0])?step.chefs[0]:'AI')[0];
   const bars=Array.from({length:7},(_,i)=>`<span style="animation-delay:${(i*0.12).toFixed(2)}s"></span>`).join('');
-  document.getElementById('stepvid-stage').innerHTML=`<div class="svm-avatar">${av}</div><div class="svm-wave">${bars}</div><div class="stepvid-caption" id="stepvid-caption"></div>`;
+  stage.innerHTML=`<div class="svm-avatar">${av}</div><div class="svm-wave">${bars}</div><div class="stepvid-caption" id="stepvid-caption"></div>`;
   document.getElementById('stepvid-overlay').classList.add('open');
   const words=v.script.split(' ');let n=0;const cap=document.getElementById('stepvid-caption');
-  clearInterval(_svTimer);cap.textContent='';
+  cap.textContent='';
   _svTimer=setInterval(()=>{if(n>=words.length){clearInterval(_svTimer);return;}cap.textContent=words.slice(0,n+1).join(' ');n++;},180);
 }
-function closeStepVideo(){clearInterval(_svTimer);document.getElementById('stepvid-overlay').classList.remove('open');}
+function closeStepVideo(){
+  clearInterval(_svTimer);
+  const v=document.querySelector('#stepvid-stage video');if(v)v.pause();
+  document.getElementById('stepvid-overlay').classList.remove('open');
+}
 function renderClockCards(){document.getElementById('clock-cards').innerHTML=appState.sharedDish.methodology.map((step,index)=>`<div class="clock-card"><div class="node-title">${step.title}</div><div class="small">${step.process}</div><div class="small">${step.startTime} • ${step.duration}</div><div class="small">Chefs: ${step.chefs.join(', ')}</div><div class="small">Ingredients: ${step.ingredients.join(', ')}</div></div>`).join('');}
 const CHEF_ORDER=['SOUS','STATION','JUNIOR','TRAINEE'];
 const CHEF_COLORS={SOUS:'#D97757',STATION:'#788C5D',JUNIOR:'#5B7FA6',TRAINEE:'#A86A9E'};
