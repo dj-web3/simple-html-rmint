@@ -916,7 +916,7 @@ function addStep(){const id=String(Date.now());const cnt=appState.sharedDish.met
 function deleteFlowNode(e,id){e.stopPropagation();const idx=appState.sharedDish.methodology.findIndex(s=>s.id===id);if(idx===-1)return;appState.sharedDish.methodology.splice(idx,1);appState.sharedDish.connections=appState.sharedDish.connections.filter(c=>c.from!==id&&c.to!==id);sync();}
 function removeFlowConnection(e,from,to){e.stopPropagation();appState.sharedDish.connections=appState.sharedDish.connections.filter(c=>!(c.from===from&&c.to===to));drawFlowEdges();}
 function renderMethodology(){}
-/* ===== HeyGen step-video engine (simulation; swap heygenGenerate for a real backend) ===== */
+/* ===== Step-video engine: multi-provider cascade (Open Source Modal -> HeyGen -> local simulation) ===== */
 appState.stepVideos={};
 function stepHash(step){return [step.title,step.process,step.duration,step.startTime,step.ingredients.join(','),step.chefs.join(',')].join('|');}
 function buildStepScript(step,i){
@@ -924,46 +924,67 @@ function buildStepScript(step,i){
   const ing=step.ingredients.length?step.ingredients.join(', '):'the prepped components';
   return `Step ${i+1}: ${step.title}. ${step.process} for ${step.duration}, starting at ${step.startTime}. This station is run by ${chefs}. You'll need ${ing}.`;
 }
-/* ── Real HeyGen call, via the serverless proxy in /api ──────────────
-   POST /api/generate-video -> { video_id }
-   GET  /api/video-status?video_id=... -> { status, video_url, duration }
-   If no backend is deployed (404 — e.g. plain GitHub Pages), we fall
-   back to a local simulation so the UI still demos. Any OTHER failure
-   (bad key, HeyGen error, timeout) is a real error and is surfaced —
-   never silently masked as a fake success.                            */
+/* ── Multi-provider video cascade, via serverless proxies in /api ────
+   Each tier exposes the same two-call shape:
+     POST <genPath>    -> { video_id }
+     GET  <statusPath>?video_id=... -> { status, video_url, duration }
+   Tiers are tried in order (free/open-source first, HeyGen second). A
+   tier that isn't deployed/configured (404/405/non-JSON, or a clean
+   {code:'NOT_CONFIGURED'} JSON 501) is skipped — cascades to the next
+   tier. Any OTHER failure means the tier IS reachable/configured but
+   genuinely broken (bad key, render error, timeout) — that surfaces
+   immediately as a real error and is NEVER silently masked by falling
+   through to the next tier or the mock simulation.                    */
+const VIDEO_PROVIDERS=[
+  {name:'modal', label:'Open Source', genPath:'/api/generate-video-opensource', statusPath:'/api/video-status-opensource'},
+  {name:'heygen',label:'HeyGen',      genPath:'/api/generate-video',           statusPath:'/api/video-status'}
+];
+function providerLabel(p){const found=VIDEO_PROVIDERS.find(x=>x.name===p);return found?found.label:(p==='mock'?'Simulated':'AI');}
 function isRealVideoUrl(u){return /^https?:\/\//i.test(u||'');}
-function heygenGenerateMock(){
+function mockGenerate(){
   return new Promise(resolve=>{
     const ms=1500+Math.random()*2200;
-    setTimeout(()=>resolve({url:'mock://heygen/'+Date.now(),durationSec:8+Math.floor(Math.random()*12)}),ms);
+    setTimeout(()=>resolve({url:'mock://video/'+Date.now(),durationSec:8+Math.floor(Math.random()*12),provider:'mock'}),ms);
   });
 }
-function noBackendErr(){const e=new Error('No HeyGen backend deployed');e.code='NO_BACKEND';return e;}
-async function heygenGenerateLive(script){
-  const genRes=await fetch('/api/generate-video',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({script})});
+function noBackendErr(msg){const e=new Error(msg||'No backend deployed');e.code='NO_BACKEND';return e;}
+async function providerGenerateLive(script,genPath,statusPath,providerName,providerLabelText){
+  const genRes=await fetch(genPath,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({script})});
   /* Static hosts (GitHub Pages, http-server, etc.) have no real /api route:
      depending on the server they answer 404, 405, or an HTML error page
-     instead of JSON. Treat any of those as "no backend" and simulate. */
-  if(genRes.status===404||genRes.status===405)throw noBackendErr();
+     instead of JSON — treat as "not deployed", cascade to next tier. */
+  if(genRes.status===404||genRes.status===405)throw noBackendErr('No '+providerLabelText+' backend deployed');
   const ct=genRes.headers.get('content-type')||'';
-  if(!ct.includes('application/json'))throw noBackendErr();
+  if(!ct.includes('application/json'))throw noBackendErr('No '+providerLabelText+' backend deployed');
   const genData=await genRes.json().catch(()=>({}));
-  if(!genRes.ok)throw new Error(genData.error||('HeyGen request failed ('+genRes.status+')'));
+  /* A deployed-but-not-yet-configured proxy (missing env vars) answers a
+     clean {code:'NOT_CONFIGURED'} — also cascade-eligible, distinct from
+     a real error from a fully configured, reachable backend. */
+  if(genData.code==='NOT_CONFIGURED')throw noBackendErr(providerLabelText+' backend not configured yet');
+  if(!genRes.ok)throw new Error(genData.error||(providerLabelText+' request failed ('+genRes.status+')'));
   const videoId=genData.video_id;
   const deadline=Date.now()+5*60*1000; /* 5 min safety timeout */
   while(Date.now()<deadline){
     await new Promise(r=>setTimeout(r,3000));
-    const statusRes=await fetch('/api/video-status?video_id='+encodeURIComponent(videoId));
+    const statusRes=await fetch(statusPath+'?video_id='+encodeURIComponent(videoId));
     const statusData=await statusRes.json().catch(()=>({}));
     if(!statusRes.ok)throw new Error(statusData.error||'Status check failed');
-    if(statusData.status==='completed')return{url:statusData.video_url,durationSec:Math.round(statusData.duration||0)};
-    if(statusData.status==='failed')throw new Error((statusData.error&&statusData.error.message)||'HeyGen reported generation failed');
+    if(statusData.status==='completed')return{url:statusData.video_url,durationSec:Math.round(statusData.duration||0),provider:providerName};
+    if(statusData.status==='failed')throw new Error((statusData.error&&statusData.error.message)||(providerLabelText+' reported generation failed'));
   }
-  throw new Error('Timed out waiting for HeyGen render');
+  throw new Error('Timed out waiting for '+providerLabelText+' render');
 }
-async function heygenGenerate(script,opts){
-  try{return await heygenGenerateLive(script,opts);}
-  catch(e){if(e.code==='NO_BACKEND'){console.info('No HeyGen backend detected — using local simulation.');return heygenGenerateMock(script,opts);}throw e;}
+async function generateStepVideoRemote(script,opts){
+  for(const p of VIDEO_PROVIDERS){
+    try{
+      return await providerGenerateLive(script,p.genPath,p.statusPath,p.name,p.label);
+    }catch(e){
+      if(e.code==='NO_BACKEND'){console.info('['+p.label+'] not available, trying next tier…');continue;}
+      throw e; /* configured-but-broken — surface now, do not cascade past a real failure */
+    }
+  }
+  console.info('No real video backend detected — using local simulation.');
+  return mockGenerate();
 }
 function generateStepVideos(){
   const steps=appState.sharedDish.methodology;
@@ -983,8 +1004,8 @@ function generateSingleStepVideo(id){
 function runStepVideo(step,i,h){
   const script=buildStepScript(step,i);
   appState.stepVideos[step.id]={status:'processing',hash:h,script};
-  heygenGenerate(script,{chef:step.chefs[0]||'SOUS'}).then(res=>{
-    appState.stepVideos[step.id]={status:'ready',hash:h,script,url:res.url,durationSec:res.durationSec};
+  generateStepVideoRemote(script,{chef:step.chefs[0]||'SOUS'}).then(res=>{
+    appState.stepVideos[step.id]={status:'ready',hash:h,script,url:res.url,durationSec:res.durationSec,provider:res.provider||'mock'};
     renderGuide();
   }).catch(err=>{
     appState.stepVideos[step.id]={status:'error',hash:h,script,error:(err&&err.message)||String(err)};
@@ -998,17 +1019,18 @@ function renderGuide(){
   if(grid)grid.innerHTML=steps.map((step,i)=>{
     const v=appState.stepVideos[step.id],h=stepHash(step);let vid;
     if(v&&v.status==='processing'){
-      vid=`<div class="step-video processing"><div class="sv-spinner"></div><div class="sv-status">Generating with HeyGen…</div></div>`;
+      vid=`<div class="step-video processing"><div class="sv-spinner"></div><div class="sv-status">Generating video…</div></div>`;
     }else if(v&&v.status==='error'){
       const msg=(v.error||'Generation failed').replace(/"/g,'&quot;');
       vid=`<div class="step-video error" onclick="generateSingleStepVideo('${step.id}')" title="${msg}"><div class="sv-err-icon">⚠</div><div class="sv-err-label">Generation failed — click to retry</div></div>`;
     }else if(v&&v.status==='ready'){
       const stale=v.hash!==h?`<span class="sv-outdated">⟳ outdated</span>`:'';
+      const badge=providerLabel(v.provider);
       if(isRealVideoUrl(v.url)){
-        vid=`<div class="step-video ready real" onclick="playStepVideo('${step.id}')">${stale}<video src="${v.url}" muted preload="metadata" playsinline></video><div class="sv-play">▶</div><div class="sv-badge">HeyGen · ${fmtDur(v.durationSec)}</div></div>`;
+        vid=`<div class="step-video ready real" onclick="playStepVideo('${step.id}')">${stale}<video src="${v.url}" muted preload="metadata" playsinline></video><div class="sv-play">▶</div><div class="sv-badge">${badge} · ${fmtDur(v.durationSec)}</div></div>`;
       }else{
         const av=(step.chefs[0]||'AI')[0];
-        vid=`<div class="step-video ready" onclick="playStepVideo('${step.id}')">${stale}<div class="sv-avatar">${av}</div><div class="sv-play">▶</div><div class="sv-caption">${step.title}</div><div class="sv-badge">HeyGen · ${fmtDur(v.durationSec)}</div></div>`;
+        vid=`<div class="step-video ready" onclick="playStepVideo('${step.id}')">${stale}<div class="sv-avatar">${av}</div><div class="sv-play">▶</div><div class="sv-caption">${step.title}</div><div class="sv-badge">${badge} · ${fmtDur(v.durationSec)}</div></div>`;
       }
     }else{
       vid=`<div class="step-video idle"><div class="sv-icon">▶</div><div class="sv-idle-label">No video yet</div></div>`;
